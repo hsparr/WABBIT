@@ -16,7 +16,3 @@ TESTING/navier_stokes/filter/**/*.dat
 OBJ
 *.xmf
 *.dat
-doc/output
-*.aux
-*.gz
-*.out

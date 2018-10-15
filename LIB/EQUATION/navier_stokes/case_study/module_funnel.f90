@@ -2,7 +2,22 @@
 !-----------------------------------------------------------------
 !> \file
 !> \brief
-!! Module of 2D/3D ion funnel
+!! Module for volume penaliza \f$\chi(x,t)\f$
+!> \details
+!> This module implements the mask function on each Block
+!!          \f[
+!!                           \chi(x,t)\quad \forall\;  x\in\mathcal{–}^l
+!!            \f]
+!!                        for Volume penalization
+!> To increase peformance there are certain tasks:
+!> \todo
+!>       + include update flag: block_updated
+!>                - if true the mask needs to be computed again
+!>                - if false the grid has not changed on the proc rank and the mask function stays
+!!                  the same
+!!       + maybe it is better to have a global mask on the finest grid level and coarsen it for
+!!         lower levels on the specific Blocks
+!!
 !> \version 23.2.2018
 !> \author P.Krah
 !-----------------------------------------------------------------
@@ -28,8 +43,8 @@ module module_funnel
   !**********************************************************************************************
   ! These are the important routines that are visible to WABBIT:
   !**********************************************************************************************
-  PUBLIC :: integrate_over_pump_area,read_params_funnel,mean_quantity,draw_funnel, &
-            set_inicond_funnel,funnel_penalization2D,funnel_penalization3D
+  PUBLIC :: integrate_over_pump_area,read_params_funnel,mean_quantity,add_funnel,draw_funnel, &
+            set_inicond_funnel
   !**********************************************************************************************
 
 !  real(kind=rk),    allocatable,     save        :: mask(:,:,:)
@@ -245,6 +260,27 @@ subroutine  draw_funnel(x0, dx, Bs, g, mask, mask_is_colored)
 end subroutine draw_funnel
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  !> This function adds constraints of the funnel geometry
+  subroutine add_funnel( penalization, x0, dx, Bs, g, phi )
+    implicit none
+    !---------------------------------------------------------------
+    integer(kind=ik), intent(in)                     :: Bs, g
+    real(kind=rk), dimension(3), intent(in)          :: x0, dx
+    real(kind=rk), dimension(:,:,:,:), intent(in)    :: phi
+    real(kind=rk), dimension(:,:,:,:), intent(inout) :: penalization
+    !---------------------------------------------------------------
+    integer,save :: count=0
+    if (params_ns%dim==3) then
+        call  funnel_penalization3D(penalization, x0, dx, Bs, g ,phi)
+    else
+        call  funnel_penalization2D(penalization(:,:,1,:), x0, dx, Bs, g , phi(:,:,1,:))
+    endif
+
+
+  end subroutine add_funnel
+  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
   !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   !> \brief Set the initial condition of a specific case
@@ -286,6 +322,7 @@ end subroutine draw_funnel
       ! endif
     end subroutine set_inicond_funnel
     !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 
 

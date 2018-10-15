@@ -193,7 +193,7 @@ contains
      call RHS_ACM( time, u, g, x0, dx,  rhs, stage )
 
    case ("ConvDiff-new")
-     call RHS_convdiff( time, u, g, x0, dx, rhs, stage,boundary_flag )
+     call RHS_convdiff( time, u, g, x0, dx, rhs, stage )
 
    case ("navier_stokes")
      call RHS_NStokes( time, u, g, x0, dx, rhs, stage, boundary_flag )

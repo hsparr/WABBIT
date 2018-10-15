@@ -76,19 +76,16 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     ! dummy field
     real(kind=rk)                                           :: dummy(Bs+2*g, Bs+2*g), dummy2(Bs+2*g, Bs+2*g), dummy3(Bs+2*g, Bs+2*g), dummy4(Bs+2*g, Bs+2*g)
 
-
-    ! inverse sqrt(rho) field
+    
+    ! inverse sqrt(rho) field 
     real(kind=rk)                                           :: phi1_inv(Bs+2*g, Bs+2*g)
 
     ! loop variables
-    integer(kind=ik)                                        :: i, j,n_eqn
-    ! inverse sqrt(rho) field
-    real(kind=rk),save,allocatable   :: phi_prime(:,:,:),phi_ref(:,:,:),mask(:,:,:)
-    logical ,save :: allocated_penal_fields=.false.
+    integer(kind=ik)                                        :: i, j
 
     ! optimization
     ! - do not use all ghost nodes (note: use only two ghost nodes to get correct second derivatives)
-    ! - write loops explicitly,
+    ! - write loops explicitly, 
     ! - use multiplication instead of division
     ! - access array in column-major order
     ! - reduce number of additionaly variables -> lead to direct calculation of rhs terms after derivation
@@ -151,9 +148,9 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         ! u_x
         tau11 = ( mu * 2.0_rk +  mu_d - 2.0_rk/3.0_rk * mu ) * dummy
         tau22 = ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy
-        tau33 = ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy
+        tau33 = ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy      
         ! u_y
-        tau12 = mu * dummy2
+        tau12 = mu * dummy2         
     end if
 
     ! v_x, v_y
@@ -168,11 +165,11 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
 
     if (dissipation) then
         ! v_x
-        tau12 = tau12 + mu * dummy
+        tau12 = tau12 + mu * dummy        
         ! v_y
         tau11 = tau11 + ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy2
         tau22 = tau22 + ( mu * 2.0_rk + mu_d - 2.0_rk/3.0_rk * mu ) * dummy2
-        tau33 = tau33 + ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy2
+        tau33 = tau33 + ( mu_d - 2.0_rk/3.0_rk * mu ) * dummy2        
     end if
 
     ! p_x, p_y
@@ -194,11 +191,11 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         ! tau11_x
         !---------------------------------------------------------------------------------------------
         call diffx_c_opt( Bs, g, dx, tau11, dummy)
-
+        
         do j = g+1, Bs+g
             do i = g+1, Bs+g
                 rhs(i,j,2) = rhs(i,j,2) + dummy(i,j)
-                rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j)
+                rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j) 
             end do
         end do
 
@@ -209,7 +206,7 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         do j = g+1, Bs+g
             do i = g+1, Bs+g
                 rhs(i,j,2) = rhs(i,j,2) + dummy(i,j)
-                rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j)
+                rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j) 
             end do
         end do
 
@@ -320,36 +317,7 @@ subroutine RHS_2D_navier_stokes( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         do i = g+1, Bs+g
             rhs(i,j,4) = rhs(i,j,4) - gamma_ * ( dummy3(i,j) + dummy4(i,j) )
         end do
-    end do
-
-    if (params_ns%penalization) then
-        ! add volume penalization
-        if (.not. allocated_penal_fields) then
-          allocated_penal_fields=.true.
-          n_eqn=params_ns%n_eqn
-          allocate( mask(Bs+2*g,Bs+2*g,n_eqn), &
-                    phi_prime(Bs+2*g,Bs+2*g,n_eqn),&
-                    phi_ref(Bs+2*g,Bs+2*g,n_eqn))
-        endif
-        phi_prime(:,:,rhoF)= rho
-        phi_prime(:,:,UxF )= u
-        phi_prime(:,:,UyF )= v
-        phi_prime(:,:,pF  )= p
-
-        call compute_mask_and_ref2D(params_ns, Bs, g, x0, delta_x, phi_prime, mask, phi_ref)
-        do j = g+1, Bs+g
-          do i = g+1, Bs+g
-            ! density
-            rhs(i,j,rhoF)=rhs(i,j,rhoF) -0.5_rk*phi1_inv(i,j)*mask(i,j,rhoF)*(rho(i,j)-  Phi_ref(i,j,rhoF) )
-            ! x-velocity
-            rhs(i,j,UxF)=rhs(i,j,UxF) -1.0_rk*phi1_inv(i,j)*mask(i,j,UxF)*(rho(i,j)*u(i,j)-  Phi_ref(i,j,UxF) )
-            ! y-velocity
-            rhs(i,j,UyF)=rhs(i,j,UyF) -1.0_rk*phi1_inv(i,j)*mask(i,j,UyF)*(rho(i,j)*v(i,j)-  Phi_ref(i,j,UyF) )
-            ! preasure
-            rhs(i,j,pF)=rhs(i,j,pF)                        -mask(i,j,pF)*(p(i,j)- Phi_ref(i,j,pF) )
-          end do
-        end do
-    endif
+    end do   
 
 end subroutine RHS_2D_navier_stokes
 
@@ -370,8 +338,8 @@ subroutine  diffxy_c_opt( Bs, g, dx, dy, u, dudx, dudy)
     real(kind=rk)                   :: dx_inv, dy_inv
 
     ! - do not use all ghost nodes (note: use only two ghost nodes to get correct second derivatives)
-    ! - no one sided stencils necessary
-    ! - write loops explicitly,
+    ! - no one sided stencils necessary 
+    ! - write loops explicitly, 
     ! - use multiplication for dx
     ! - access array in column-major order
 
@@ -398,8 +366,8 @@ subroutine  diffx_c_opt( Bs, g, dx, u, dudx)
     real(kind=rk)                   :: dx_inv
 
     ! - do not use ghost nodes
-    ! - no one sided stencils necessary
-    ! - write loops explicitly,
+    ! - no one sided stencils necessary 
+    ! - write loops explicitly, 
     ! - use multiplication for dx
     ! - access array in column-major order
 
@@ -424,8 +392,8 @@ subroutine  diffy_c_opt( Bs, g, dy, u, dudy)
     real(kind=rk)                   :: dy_inv
 
     ! - do not use ghost nodes
-    ! - no one sided stencils necessary
-    ! - write loops explicitly,
+    ! - no one sided stencils necessary 
+    ! - write loops explicitly, 
     ! - use multiplication for dx
     ! - access array in column-major order
 
@@ -545,3 +513,5 @@ subroutine  diffy_c( Bs, g, dy, u, dudy)
     dudy(:,n)   = ( u(:,n) - u(:,n-1) ) / (dy)
 
 end subroutine diffy_c
+
+
