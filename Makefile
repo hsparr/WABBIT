@@ -18,7 +18,7 @@ MFILES = module_precision.f90 module_globals.f90 module_params.f90 module_debug.
 	module_physics_metamodule.f90 module_ACM.f90 module_ConvDiff_new.f90 module_bridge_interface.f90 \
 	module_bridge.f90 module_navier_stokes_params.f90 module_helpers.f90 module_insects_integration_flusi_wabbit.f90 \
 	module_insects.f90 module_boundary_conditions.f90 module_funnel.f90 module_navier_stokes_cases.f90\
-	module_simple_geometry.f90 module_shock.f90
+	module_simple_geometry.f90 module_shock.f90 module_skimmer.f90
 MOBJS := $(MFILES:%.f90=$(OBJDIR)/%.o)
 
 # Source code directories (colon-separated):
