@@ -45,6 +45,9 @@ tests=(
        "TESTING/acm/bumblebee_adaptive/bumblebee_adaptive.sh"
        "TESTING/acm/acm_cyl_equi/acm_cylinder_equi.sh"
        "TESTING/acm/acm_cyl_nonequi/acm_cylinder_nonequi.sh"
+       "TESTING/acm/acm_cyl_adaptive_newsponge/acm_cyl_adaptive_newsponge.sh"
+       "TESTING/acm/acm_cyl_adaptive_newsponge_mach/acm_cyl_adaptive_newsponge_mach.sh"
+       "TESTING/acm/acm_cyl_adaptive_krylov/acm_cylinder_adaptive_krylov.sh"
        "TESTING/acm/acm_cyl_adaptive/acm_cylinder_adaptive.sh"
        "TESTING/acm/acm_cyl_adaptive/acm_cylinder_adaptive_zcurve.sh"
        "---convection---"
@@ -107,7 +110,7 @@ do
     fi
 done
 
-echo
+echo ""
 T="$(($(date +%s)-T))"
 echo "Time used in tests: ${T} seconds"
 
