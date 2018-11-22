@@ -62,13 +62,13 @@ subroutine draw_skimmer2D(x0, dx, Bs, g, mask, mask_color)
             !=============================
 
 
-            ! plates
+            ! Skimmer
             ! ------
-           ! chi = draw_funnel_plates(x,r,skimmer,h)
-           ! if (chi>0.0_rk) then
-            !  mask_color(ix,iy)  = color_plates
-            !  mask(ix,iy,2:4)    = mask(ix,iy,2:4) + chi
-           ! endif                                           ! the temperature of the funnel
+            chi = draw_skimmer_plates(x,r,skimmer,h)
+            if (chi>0.0_rk) then
+              mask_color(ix,iy)  = color_plates
+              mask(ix,iy,2:4)    = mask(ix,iy,2:4) + chi
+            endif                                           ! the temperature of the funnel
 
             ! Walls
             ! -----
@@ -108,16 +108,22 @@ subroutine draw_sponge2D(x0, dx, Bs, g, mask, mask_color)
        r = abs(y-domain_size(2)*0.5_rk)
        do ix=g+1, Bs+g
             x = dble(ix-(g+1)) * dx(1) + x0(1)
-                                       ! the temperature of the funnel
+                                       ! the temperature of the skimmer
 
             ! Outlet flow: PUMPS
             ! ------------------
             ! pump volume flow
             chi=  draw_pumps_volume_flow(x,r,skimmer,h)
             if (chi>0.0_rk) then
+              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
               mask(ix,iy,2:3)   = mask(ix,iy,2:3)+chi
-              mask_color(ix,iy) = color_pumps
+              mask_color(ix,iy) = color_pumps_1
+              else
+              mask(ix,iy,2:3)   = mask(ix,iy,2:3)+chi
+              mask_color(ix,iy) = color_pumps_2
+              endif
             endif
+
             ! mass and energy sink
             chi=  draw_pumps_sink(x,r,skimmer,h)
             if (chi>0.0_rk) then
@@ -194,8 +200,8 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
       !call abort('ERROR [skimmer.f90]: discretication constant dy to large')
     endif
 
-    if (3*dx(1)<=0.1_rk*skimmer%pump_diameter) then
-      pump_smooth_width = 0.025_rk*skimmer%pump_diameter
+    if (3*dx(1)<=0.1_rk*((skimmer%plates_thickness+skimmer%plate(1)%x0(1))*0.5_rk)) then
+      pump_smooth_width = 0.025_rk*(skimmer%wall_thickness_x*0.5_rk)
     else
       pump_smooth_width = 3*h
       !call abort('ERROR [skimmer.f90]: discretication constant dy to large')
@@ -215,8 +221,8 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
 
             !solid obstacles: walls and plates
             ! ------
-           ! if  (mask_color(ix,iy) == color_plates &
-           if( mask_color(ix,iy) == color_walls ) then
+            if  (mask_color(ix,iy) == color_plates &
+            .or. mask_color(ix,iy) == color_walls ) then
               Phi_ref(ix,iy,2) = 0.0_rk                     ! no velocity in x
               Phi_ref(ix,iy,3) = 0.0_rk                     ! no velocity in y
               Phi_ref(ix,iy,4) = rho*Rs*skimmer%temperatur   ! pressure set according to
@@ -225,9 +231,12 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
 
             ! Outlet flow: PUMPS
             ! ------------------
-            if (mask_color(ix,iy) == color_pumps) then
-              v_ref=velocity_pump*jet_stream(abs(x-skimmer%pump_x_center), &
-                                             skimmer%pump_diameter*0.5_rk,pump_smooth_width)
+            if (mask_color(ix,iy) == color_pumps_1 .and. mask_color(ix,iy)==color_pumps_2) then
+              v_ref=velocity_pump*jet_stream(abs(x-(skimmer%plate(1)%x0(1)+skimmer%plates_thickness)*0.5_rk), &
+                                            (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width) &
+                    +velocity_pump*jet_stream(abs(x+skimmer%plates_thickness-(skimmer%plate(1)%x0(1)+skimmer%plates_thickness)*0.5_rk), &
+                            (skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width)
+               
                Phi_ref(ix,iy,2) = 0
                C_inv=C_eta_inv
               if (y>R_domain) then
@@ -275,39 +284,59 @@ end subroutine  compute_penal2D
 
 
 
-!> \brief Compute mask term for stacked rings of the ion funnel
-!function draw_funnel_plates(x,r,funnel,h)
+!> \brief Compute mask term for stacked rings of the ion skimmer
+function draw_skimmer_plates(x,r,skimmer,h)
 
-!  real(kind=rk)     , intent(in)  :: x, r, h
-!  type(type_funnel) , intent(in)  :: funnel
-!  real(kind=rk)                   :: draw_funnel_plates
-!  integer(kind=ik)                :: n
+  real(kind=rk)     , intent(in)   :: x, r, h
+  type(type_skimmer) , intent(in)  :: skimmer
+  real(kind=rk)                    :: draw_skimmer_plates
+  integer(kind=ik)                 :: n
   ! distance frommin_inner_diameterter of cylinder
-!  draw_funnel_plates=0.0_rk
+  draw_skimmer_plates=0.0_rk
 
   ! loop over all plates
-!  do n=1,funnel%nr_plates
+  do n=1,skimmer%nr_plates
 
-!      draw_funnel_plates=draw_funnel_plates+draw_plate(x,r,funnel%plate(n),h)
+      draw_skimmer_plates=draw_skimmer_plates+draw_plate(x,r,skimmer%plate(n),h)
 
-!  enddo
+  enddo
 
-!end function draw_funnel_plates
+end function draw_skimmer_plates
 
 
 !> \brief Compute mask term for single ring-plate
-!function draw_plate(x,r,plate,h)
+function draw_plate(x,r,plate,h)
 
-!  real(kind=rk), intent(in)          :: x, r, h
-!  type(type_funnel_plate),intent(in) ::plate
+  real(kind=rk), intent(in)          :: x, r, h
+  type(type_skimmer_plate),intent(in) ::plate
 
-!  real(kind=rk)                      ::draw_plate,delta_r
+  real(kind=rk)                      ::draw_plate,delta_r,r2,r1,x_sk ,height, mask
+  
+  mask=0.0_rk  
 
-!  delta_r     = plate%r_out-plate%r_in
+  height    = skimmer%min_inner_diameter/2
+  x_sk      = (x-(plate%x0(1)-skimmer%l_sk1_in+plate%width))
+ if(x< plate%x0(1)) then
+ 
+   r1        = tan(skimmer%alpha_1)*x_sk+height 
+else
+   r1 = plate%x0(1) 
+ endif
+
+   r2        = tan(skimmer%alpha_2)*x_sk+height 
+  delta_r     = plate%r_out-plate%r_in
+
+ if (x > plate%width+plate%x0(1)-skimmer%l_sk1_in  .and. x <  plate%x0(1)+plate%width.and. &
+    r <r1  .and. r > r2 ) then 
+     mask=1
+ endif
+
+
 !  draw_plate  = soft_bump(x,plate%x0(1),plate%width,h)*soft_bump(r,plate%r_in,delta_r,h)
-!  draw_plate  = hard_bump(x,plate%x0(1),plate%width)*hard_bump(r,plate%r_in,delta_r)
-
-!end function draw_plate
+  draw_plate = hard_bump(x,plate%x0(1),plate%width)*hard_bump(r,plate%r_in,delta_r)+mask 
+              ! hardstep(y1)*smoothstep(y2,h)
+  
+end function draw_plate
 
 
 function draw_walls(x,r,skimmer,h)
@@ -320,27 +349,23 @@ function draw_walls(x,r,skimmer,h)
   mask=0.0_rk
 
   ! wall in south and north (i.e. in radial direction)
-  if (abs(x-skimmer%pump_x_center)> skimmer%pump_diameter*0.5_rk) then
-    ! mask for r>R_domain-wall_thickness   (outer wall)
-         !mask=mask+smoothstep(R_domain-funnel%wall_thickness-r,h)
-         mask=mask+hardstep(R_domain-skimmer%wall_thickness-r)
+  if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
+       x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then 
+        mask=mask+hardstep(R_domain-0.333_rk*skimmer%wall_thickness_y+h-r)
   else
-        ! +h because the sponge domain should not overlap with the walls
-        mask=mask+hardstep(R_domain-0.333_rk*skimmer%wall_thickness+h-r)
-
-         !mask=mask+smoothstep(R_domain-0.333_rk*skimmer%wall_thickness+h-r,h)
+         mask=mask+hardstep(R_domain-skimmer%wall_thickness_y-r)
   endif
 
   ! wall in east
   !mask=mask+smoothstep(x-skimmer%wall_thickness,h)
   if ( r > skimmer%jet_radius) then
-      mask=mask+hardstep(x-skimmer%wall_thickness)
+      mask=mask+hardstep(x-skimmer%wall_thickness_x)
   else
-      mask=mask+hardstep(x-skimmer%wall_thickness*0.5_rk)
+      mask=mask+hardstep(x-skimmer%wall_thickness_x*0.5_rk)
   endif
   ! attach cappilary to wall in EAST
   if (  r > skimmer%jet_radius  ) then
-      mask=mask+hardstep(x)*hardstep(r-skimmer%r_out_cappilary)
+      mask=mask+hardstep(x+skimmer%wall_thickness_x-skimmer%plate(1)%x0(1)+skimmer%l_sk1_in-skimmer%plates_thickness)*hardstep(r-skimmer%r_out_cappilary)
 
          !mask=mask+smoothstep(x,h)*smoothstep(r-skimmer%r_out_cappilary,h)
   endif
@@ -350,9 +375,9 @@ function draw_walls(x,r,skimmer,h)
   if ( r > skimmer%min_inner_diameter*0.5_rk) then
         !  mask=mask+smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
 
-         mask=mask+hardstep(domain_size(1)-x-skimmer%wall_thickness)
+         mask=mask+hardstep(domain_size(1)-x-skimmer%wall_thickness_x)
   else
-        mask=mask+hardstep(domain_size(1)-x-skimmer%wall_thickness*0.5_rk)
+        mask=mask+hardstep(domain_size(1)-x-skimmer%wall_thickness_x*0.5_rk)
         ! mask=mask+smoothstep(domain_size(1)-x-skimmer%wall_thickness*0.5_rk,h)
   endif
 
@@ -372,12 +397,17 @@ function draw_pumps_volume_flow(x,r,skimmer,h)
   real(kind=rk)                         ::  mask, draw_pumps_volume_flow,r0,width
 
   mask  =0
-  width =skimmer%wall_thickness*0.333_rk
-  r0    =(R_domain-skimmer%wall_thickness)
-  if (abs(x-skimmer%pump_x_center)<= skimmer%pump_diameter*0.5_rk) then
-         !for r0<r<r0+width apply penalization
-         mask=soft_bump2(r,r0,width,h)
+  width =skimmer%wall_thickness_x*0.333_rk
+  r0    =(R_domain-skimmer%wall_thickness_x)
+  if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
+       x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then 
+       mask = soft_bump2(r,r0,width,h)
   endif
+
+!  if (abs(x-skimmer%pump_x_center)<= skimmer%pump_diameter*0.5_rk) then
+         !for r0<r<r0+width apply penalization
+!         mask=soft_bump2(r,r0,width,h)
+!  endif
 
 
   draw_pumps_volume_flow=mask
@@ -388,15 +418,17 @@ function draw_pumps_sink(x,r,skimmer,h)
   real(kind=rk),    intent(in)          :: x, r, h
   type(type_skimmer),intent(in)         ::skimmer
 
-  real(kind=rk)                         ::r0, draw_pumps_sink,width,depth,x_lb,x_rb
-
+  real(kind=rk)                         ::r0,mask, draw_pumps_sink,width,depth
+ 
   draw_pumps_sink  = 0.0_rk
-  r0    =(R_domain-skimmer%wall_thickness*0.666_rk)
-  depth =skimmer%wall_thickness*0.3_rk
-  x_lb  =skimmer%pump_x_center-skimmer%pump_diameter*0.5_rk
-  x_rb  =skimmer%pump_x_center+skimmer%pump_diameter*0.5_rk
+  r0    =(R_domain-skimmer%wall_thickness_x*0.666_rk)
+  depth =skimmer%wall_thickness_x*0.3_rk
 
-  draw_pumps_sink=soft_bump2(r,r0,depth,h)*soft_bump2(x,x_lb,x_rb-x_lb,h)
+if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
+       x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then
+      mask =soft_bump2(r,r0,depth,h)
+  endif
+  draw_pumps_sink=mask 
 
 end function draw_pumps_sink
 
@@ -407,11 +439,11 @@ function draw_jet(x,r,skimmer,h)
 
   real(kind=rk)                         ::draw_jet,length_of_jet
 
-  length_of_jet=skimmer%wall_thickness*0.5_rk-h
+  length_of_jet= -skimmer%wall_thickness_x*0.5_rk-h+skimmer%plate(1)%x0(1)-skimmer%l_sk1_in-skimmer%plates_thickness
 
   !if (r< skimmer%jet_radius) then
     ! wall in EAST
-    draw_jet=soft_bump2(x,skimmer%wall_thickness*0.5_rk+h,length_of_jet,h)*smoothstep(r-skimmer%jet_radius+h,h)
+    draw_jet=soft_bump2(x,skimmer%wall_thickness_x*0.5_rk+h,length_of_jet,h)*smoothstep(r-skimmer%jet_radius+h,h)
 
     !draw_jet=smoothstep(x-skimmer%wall_thickness,h)-smoothstep(x-skimmer%wall_thickness/2.0_rk,h)
   !else
@@ -429,7 +461,7 @@ function draw_outlet(x,r,skimmer,h)
 
          ! wall in WEST
     !draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
-draw_outlet=soft_bump2(x,domain_size(1)-skimmer%wall_thickness,skimmer%wall_thickness*0.5_rk,h)&
+draw_outlet=soft_bump2(x,domain_size(1)-skimmer%wall_thickness_x,skimmer%wall_thickness_x*0.5_rk,h)&
             *smoothstep(r-(skimmer%min_inner_diameter*0.5_rk-h),h)
 
 end function draw_outlet
@@ -442,7 +474,7 @@ function draw_sink(x,r,skimmer,h)
 
   real(kind=rk)                         ::draw_sink,radius
 
-  radius     = sqrt((x-domain_size(1)+skimmer%wall_thickness*0.6_rk)**2+r**2)
+  radius     = sqrt((x-domain_size(1)+skimmer%wall_thickness_x*0.6_rk)**2+r**2)
   draw_sink  = smoothstep(r-skimmer%min_inner_diameter*0.4_rk,h)
 
 
@@ -452,55 +484,55 @@ end function draw_sink
 
 
 !==========================================================================
-    !> \brief initialization of all plates in the funnel
+    !> \brief initialization of all plates in the skimmer
     !> \todo insert picture
-!    subroutine init_plates(funnel)
+    subroutine init_plates(skimmer)
 
-!      implicit none
+      implicit none
       !> geometric parameters of ion funnel
-!      type(type_funnel), intent(inout) :: funnel
+      type(type_skimmer), intent(inout) :: skimmer
 
-!      real(kind=rk)                   :: distance,length,length_focus,width
-!      integer(kind=ik)                :: n
-!      type(type_funnel_plate)         :: plate
+      real(kind=rk)                   :: distance,length,length_focus,width
+      integer(kind=ik)                :: n
+      type(type_skimmer_plate)         :: plate
 
-!      allocate(funnel%plate(funnel%nr_plates))
+      allocate(skimmer%plate(skimmer%nr_plates))
 
-!      distance    =funnel%plates_distance
-!      length      =funnel%length
-!      width       =funnel%plates_thickness
-      ! length of focus area in funnel (+distance +wdith because the last plate is in the orifice)
-!      length_focus           = length +width+distance   - (funnel%max_inner_diameter-funnel%min_inner_diameter)/funnel%slope
-      ! origin of funnel
-!      funnel%offset=(/ domain_size(1)-length-funnel%wall_thickness-distance, &
-!                       R_domain/)
-!      if(funnel%offset(1)<funnel%wall_thickness) then
-!       call abort(13457,'Error [module_mask.f90]: your funnel is to long')
-!      endif
+      distance    =skimmer%plates_distance
+      length      =skimmer%length
+      width       =skimmer%plates_thickness
+      ! length of focus area in skimmer (+distance +wdith because the last plate is in the orifice)
+      length_focus           = distance+length+width - (skimmer%max_inner_diameter-skimmer%min_inner_diameter)
+      ! origin of skimmer
+      skimmer%offset=(/distance+ skimmer%wall_thickness_x, &
+                       R_domain/)
+      if(skimmer%offset(1)<skimmer%wall_thickness_x) then
+       call abort(13457,'Error [module_mask.f90]: your skimmer is to long')
+      endif
 
       ! initialicd all plates
       ! ---------------------
       ! first plate is often fat and ugly (:
-!      funnel%plate(1)%x0    =funnel%offset                  ! coordinates of the midpoint of the funnel
-!      funnel%plate(1)%width =funnel%first_plate_thickness   ! as the name says its a fat plate
-!      funnel%plate(1)%r_in  =funnel%max_inner_diameter/2    ! inner diameter of the ring
-!      funnel%plate(1)%r_out  =funnel%outer_diameter/2        ! outer diameter of the ring
+      skimmer%plate(1)%x0    =skimmer%offset                 ! coordinates of the midpoint of the funnel
+      skimmer%plate(1)%width =skimmer%first_plate_thickness   ! as the name says its a fat plate
+      skimmer%plate(1)%r_in  =skimmer%max_inner_diameter/2    ! inner diameter of the ring
+      skimmer%plate(1)%r_out  =skimmer%outer_diameter/2        ! outer diameter of the ring
 
       ! all the other plates are similar
-!      do n=2,funnel%nr_plates
-!        plate%x0(1)     = funnel%plate(n-1)%x0(1)+funnel%plate(n-1)%width+distance
-!        plate%x0(2)     = funnel%offset(2)
+!      do n=2,skimmer%nr_plates
+!        plate%x0(1)     = skimmer%plate(n-1)%x0(1)+skimmer%plate(n-1)%width+distance
+!        plate%x0(2)     = skimmer%offset(2)
 !        plate%width     = width
-!        if (plate%x0(1)-funnel%offset(1)<length_focus) then
-!           plate%r_in    = funnel%max_inner_diameter/2
+!        if (plate%x0(1)-skimmer%offset(1)<length_focus) then
+!           plate%r_in    = skimmer%max_inner_diameter/2
 !        else
-!           plate%r_in = plate%r_in - funnel%slope*(distance+width)/2
+!           plate%r_in = plate%r_in - skimmer%slope*(distance+width)/2
 !        endif
-!        plate%r_out   =funnel%outer_diameter/2
-!        funnel%plate(n)=plate
+!        plate%r_out   =skimmer%outer_diameter/2
+!        skimmer%plate(n)=plate
 !     enddo
 
-!    end subroutine init_plates
+    end subroutine init_plates
 !==========================================================================
 
 
@@ -528,15 +560,16 @@ end function draw_sink
 
        h  = 1.5_rk*max(dx(1), dx(2))
       ! calculate mean density close to the pump
-      width =skimmer%wall_thickness
+      width =skimmer%wall_thickness_x
       tmp   =  0.0_rk
-      r0    =(R_domain-2*skimmer%wall_thickness)
+      r0    =(R_domain-2*skimmer%wall_thickness_x)
        do iy=g+1, Bs+g
          y = dble(iy-(g+1)) * dx(2) + x0(2)
          r = abs(y-R_domain)
          do ix=g+1, Bs+g
               x = dble(ix-(g+1)) * dx(1) + x0(1)
-              if (abs(x-skimmer%pump_x_center)<= skimmer%pump_diameter*0.5_rk .and. &
+              if (abs((x-skimmer%plate(1)%x0(1))*0.5_rk)<= (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk .and. &
+
                   r>r0 .and. r<r0+width) then
                 tmp(1:4)  = tmp(1:4)+ u(ix,iy,:)
                 tmp(5)    = tmp(5)  + 1.0_rk

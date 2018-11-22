@@ -9,9 +9,11 @@ module module_navier_stokes_cases
 
     use module_navier_stokes_params
     use module_funnel
+    use module_skimmer
     use module_ns_penalization
     use module_simple_geometry
     use module_shock
+    
 
 
     implicit none
@@ -40,6 +42,8 @@ contains
   select case ( params%case )
   case ('funnel')
     call read_params_funnel(params,FILE)
+  case ('skimmer')
+    call read_params_skimmer(params,FILE)
   case('simple_geometry')
     call read_params_geometry(params,FILE)
   case('shock_tube')
@@ -77,6 +81,9 @@ end subroutine read_case_parameters
       case('funnel')
         call set_inicond_funnel(x0, dx, Bs, g, phi )
         return
+      case('skimmer')
+        call set_inicond_skimmer(x0, dx, Bs, g, phi )
+        return 
       case('shock_tube')
         call set_inicond_shock_tube(x0, dx, Bs, g, phi )
         return
@@ -96,7 +103,7 @@ end subroutine read_case_parameters
      !-------------------------------------------------------
      integer(kind=ik), intent(in)    :: g, Bs          !< grid parameter
      real(kind=rk), intent(in)       :: phi(:,:,:)     !< primary state variables
-     real(kind=rk), intent(inout)    :: mask(:,:,:)    !< rhs
+     real(kind=rk), intent(inout) :: mask(:,:,:)       !< rhs
      real(kind=rk), intent(inout)    :: phi_ref(:,:,:) !< reference state variables
      real(kind=rk), intent(in)       :: x0(2), dx(2)   !< spacing and origin of block
      type(type_params_ns),intent(inout)   :: params    !< NStokes Params structure
@@ -111,6 +118,8 @@ end subroutine read_case_parameters
        call geometry_penalization2D(Bs, g, x0, dx, phi(:,:,rhoF), mask, phi_ref)
      case('funnel')
        call funnel_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
+     case('skimmer')
+       call skimmer_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
      case('no')
        return
      case default
@@ -174,6 +183,8 @@ end subroutine read_case_parameters
         call draw_geometry(x0, dx, Bs, g, mask)
       case('funnel')
         call draw_funnel(x0, dx, Bs, g, mask,is_colored)
+      case('skimmer')
+        call draw_skimmer(x0, dx, Bs, g, mask,is_colored)
       case('shock_tube')
         call draw_simple_shock(mask(:,:,:), x0, dx, Bs, g )
       case('no')

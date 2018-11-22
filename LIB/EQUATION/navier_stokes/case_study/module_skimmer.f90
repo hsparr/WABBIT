@@ -48,30 +48,47 @@ module module_skimmer
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
   integer(kind=2),parameter :: color_capillary  =6
   integer(kind=2),parameter :: color_outlet     =5
-!  integer(kind=2),parameter :: color_plates     =4
+  integer(kind=2),parameter :: color_plates     =2
   integer(kind=2),parameter :: color_walls      =3
-  integer(kind=2),parameter :: color_pumps      =2
+  integer(kind=2),parameter :: color_pumps_2    =4
+  integer(kind=2),parameter :: color_pumps_1    =4
   integer(kind=2),parameter :: color_pumps_sink =1
+
+
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
+  type :: type_skimmer_plate
+    real(kind=rk) :: x0(1:2)
+    real(kind=rk) :: width
+    real(kind=rk) :: r_in
+    real(kind=rk) :: r_out
+    real(kind=rk) :: height  
+  end type type_skimmer_plate
+ 
 
   type :: type_skimmer
       real(kind=rk)       ::outer_diameter         ! outer diameter
       real(kind=rk)       ::max_inner_diameter     ! maximal inner diameter
       real(kind=rk)       ::min_inner_diameter    =-1.0_rk ! minimal inner diameter
+      integer(kind=ik)    ::nr_plates             =0_ik ! Number of plates
+      real(kind=rk)       ::plates_distance       =-1.0_rk ! distance between origin of plates
+      real(kind=rk)       ::plates_thickness      =-1.0_rk !
+      real(kind=rk)       ::first_plate_thickness =-1.0_rk
       real(kind=rk)       ::temperatur            =-1.0_rk ! temperatur of plates
-
+      real(kind=rk)       ::alpha_1               =-1.0_rk !
+      real(kind=rk)       ::alpha_2               =-1.0_rk !
+      real(kind=rk)       ::l_sk1_in              =-1.0_rk !
+      real(kind=rk)       ::l_sk1_out             =-1.0_rk !
+ 
       real(kind=rk)       ::length                =-1.0_rk ! total length of funnel
       real(kind=rk)       ::slope                 =-1.0_rk ! slope of funnel
       real(kind=rk)       ::offset(2)             =-1.0_rk ! offset of funnel in x and y
 
       ! parameters of flow inlet outlet
-      real(kind=rk)       ::pump_diameter  =-1.0_rk
-      real(kind=rk)       ::pump_x_center  =-1.0_rk
       real(kind=rk)       ::jet_radius     =-1.0_rk        ! cappilary inner Radius
       real(kind=rk)       ::r_out_cappilary=-1.0_rk         ! cappilary outer Radus
-      real(kind=rk)       ::wall_thickness =-1.0_rk           !
+      real(kind=rk)       ::wall_thickness_x =-1.0_rk           !Wall_thicknes in x-direct
+      real(kind=rk)       ::wall_thickness_y =-1.0_rk       ! Wall_thicknes in y-direct
 
       real(kind=rk)       ::inlet_velocity(3)       !
       real(kind=rk)       ::inlet_density       !
@@ -81,6 +98,7 @@ module module_skimmer
       real(kind=rk)       ::pump_speed       !
       real(kind=rk)       ::pump_density      !
       real(kind=rk)       ::pump_pressure     !
+      type(type_skimmer_plate), allocatable:: plate(:)
   end type type_skimmer
 
 
@@ -102,10 +120,11 @@ contains
 
       ! character(len=*), intent(in) :: filename
       type(inifile) , intent(inout) :: FILE
-      !> params structure of navier stokes
+      !> params structure of navier stokekimm
       type(type_params_ns),intent(inout)  :: params
 
-      real(kind=rk)                 :: dmax,dmin
+      real(kind=rk)                 :: dmax,dmin,dmax_sk1,dmax_sk2
+      integer(kind=ik)              :: nr_focus_plates
       ! inifile structure
       !type(inifile) :: FILE
       !call read_ini_file_mpi(FILE, filename, .true.)
@@ -115,10 +134,20 @@ contains
       call read_param_mpi(FILE, 'skimmer', 'outer_diameter'        , skimmer%outer_diameter, R_domain*0.5_rk )
       call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter', dmax, domain_size(2)/3.0_rk )
       call read_param_mpi(FILE, 'skimmer', 'minimal_inner_diameter', dmin, domain_size(2)/4.0_rk )
+      call read_param_mpi(FILE, 'skimmer', 'angle_alpha_1'      ,skimmer%alpha_1 , 30.0_rk)            
+      call read_param_mpi(FILE, 'skimmer', 'angle_alpha_2'         ,skimmer%alpha_2 , 30.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'skimmer_funnel_length_in' , skimmer%l_sk1_in, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'skimmer_funnel_length_out', skimmer%l_sk1_out, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'Number_of_plates'      , skimmer%nr_plates, 30 )
+      call read_param_mpi(FILE, 'skimmer', 'Number_of_focus_plates', nr_focus_plates, 15)
       call read_param_mpi(FILE, 'skimmer', 'Temperatur_of_plates'  , skimmer%temperatur, 300.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'jet_diameter'          , skimmer%jet_radius, R_domain*0.5_rk)
       !call read_param_mpi(FILE, 'skimmer', 'pump_diameter'         , skimmer%pump_diameter, domain_size(1)/5.0_rk)
       !optional values
+      call read_param_mpi(FILE, 'skimmer', 'plates_thickness'         , skimmer%plates_thickness, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'first_plate_thickness'    , skimmer%first_plate_thickness, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'distance_between_plates'  , skimmer%plates_distance, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'diameter_slope_per_plate'  , skimmer%slope, 1.0_rk)
        ! this parameters are global in skimmer module!
       Rs         =params%Rs
       gamma_     =params%gamma_
@@ -129,26 +158,47 @@ contains
       skimmer%max_inner_diameter   = dmax
       skimmer%min_inner_diameter   = dmin
       params%inicond_width        = dmax
-      skimmer%wall_thickness       = 0.05*domain_size(1)
-      skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness*2.0_rk
+      skimmer%wall_thickness_x       = 0.05*domain_size(1)
+      skimmer%wall_thickness_y       = 0.05*domain_size(2)
+      skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness_x*2.0_rk
       skimmer%slope                = (dmax - dmin)
- !   else....-> umschreiben für den skimmer
-      ! convert diameter slope to slope in y=slope*x
- !     skimmer%slope  = skimmer%slope*0.5_rk
- !    skimmer%length = funnel%first_plate_thickness &
- !     + funnel%plates_thickness*(funnel%nr_plates-1)+funnel%plates_distance*(funnel%nr_plates-1)
- !     if ( funnel%length+2*funnel%wall_thickness>domain_size(1)) then
-!        write(*,*) "funnel length + 2*walls=",funnel%length
-!        call abort(7543,'your funnel does not fit in the vacuum chamber! you are a bad experimentalist! try again')
-!      end if
 
-!    end if
+     if ( skimmer%plates_thickness  < 0.0_rk .or. &
+      skimmer%plates_distance   <0.0_rk .or. &
+      skimmer%slope             <0.0_rk .or. &
+      skimmer%plates_thickness  <0.0_rk ) then !default values
+      skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness_x*2.0_rk
+      skimmer%plates_thickness     = skimmer%length/(2.0_rk*skimmer%nr_plates)
+      skimmer%first_plate_thickness= skimmer%plates_thickness
+      skimmer%plates_distance      = (skimmer%length-skimmer%nr_plates*skimmer%plates_thickness)/(skimmer%nr_plates-1)
+      skimmer%slope                = (dmax - dmin)/((nr_focus_plates-2)*(skimmer%plates_distance+skimmer%plates_thickness))
+    else
+      ! convert diameter slope to slope in y=slope*x
+      skimmer%slope  = skimmer%slope/(skimmer%plates_distance+skimmer%plates_thickness)*0.5_rk
+      skimmer%length = skimmer%first_plate_thickness &
+      + skimmer%plates_thickness*(skimmer%nr_plates-1)+skimmer%plates_distance*(skimmer%nr_plates-1)
+      if ( skimmer%length+2*skimmer%wall_thickness_x>domain_size(1)) then
+        write(*,*) "skimmer length + 2*walls=",skimmer%length
+        call abort(7543,'your skimmer does not fit in the vacuum chamber! you are a bad experimentalist! try again')
+      end if
+
+    end if
+    ! convert degrees to radians
+    if ( skimmer%alpha_1>0.0_rk .and. skimmer%alpha_1<90.0_rk .or. & 
+         skimmer%alpha_2>0.0_rk .and. skimmer%alpha_2<90.0_rk) then
+     skimmer%alpha_1=skimmer%alpha_1*PI/180.0_rk
+     skimmer%alpha_2=skimmer%alpha_2*PI/180.0_rk 
+    else
+     call abort(45756,"somebody has to go back to preeshool! 0< angle <90")
+    end if   
     skimmer%jet_radius           = skimmer%jet_radius/2.0_rk !inner radius of cappilary
-    skimmer%r_out_cappilary      = skimmer%jet_radius*3.0_rk  !outer radius of cappilary
+    skimmer%r_out_cappilary      = skimmer%jet_radius*1.5_rk  !outer radius of cappilary
     skimmer%pump_density         = 0
-    ! we pump the full right half of the chamber:
-    skimmer%pump_diameter        = (domain_size(1)-2.0_rk*skimmer%wall_thickness)*0.5_rk
-    skimmer%pump_x_center        = domain_size(1)-skimmer%wall_thickness-skimmer%pump_diameter*0.5_rk   ! the pump is located at the right half of the skimmer chamber
+    ! we pump the full left half of the chamber:
+!    skimmer%pump_diameter        = (domain_size(1)-2.0_rk*skimmer%wall_thickness_x-skimmer%plates_thickness)*0.5_rk
+!    skimmer%pump_x_center       = domain_size(1)-skimmer%wall_thickness_x-skimmer%pump_diameter*1.0_rk
+!    skimmer%pump_x_center_r        = domain_size(1)-skimmer%wall_thickness_x-skimmer%pump_diameter*0.5_rk 
+  ! the pump is located at the left half of the skimmer chamber
     ! READ IN Capillary inlet flow
     ! ----------------------------
     skimmer%inlet_velocity=(/ 0.0_rk, 0.0_rk, 0.0_rk /)
@@ -159,14 +209,15 @@ contains
     call read_param_mpi(FILE, 'skimmer', 'pump_speed'      , skimmer%pump_speed, 30.0_rk )
     call read_param_mpi(FILE, 'skimmer', 'outlet_pressure' , skimmer%outlet_pressure, 1.0_rk)
     skimmer%outlet_density=skimmer%outlet_pressure/(params_ns%Rs*skimmer%temperatur)
-    if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness .or. &
-    skimmer%outer_diameter >domain_size(2)-2.0_rk*skimmer%wall_thickness) then
-      call abort(5032,"ERROR [skimmer.f90]:funnel is larger then simulation domain!")
+    if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness_x .or. &
+    skimmer%outer_diameter >domain_size(2)-2.0_rk*skimmer%wall_thickness_y) then
+      call abort(5032,"ERROR [skimmer.f90]:skimmer is larger then simulation domain!")
     endif
-    if ( skimmer%pump_diameter>domain_size(2)-2*skimmer%wall_thickness ) then
-        call abort(3464,"ERROR [module_skimmer]: your pump diameter is larger then the vacuum chamber!!")
-    end if
-  
+!    if ( skimmer%pump_diameter>domain_size(2)-2*skimmer%wall_thickness_x ) then
+!        call abort(3464,"ERROR [module_skimmer]: your pump diameter is larger then the vacuum chamber!!")
+!    end if
+    !initialice geometry of ion skimmer plates
+    call init_plates(skimmer) 
 end subroutine read_params_skimmer
 
 
@@ -201,8 +252,8 @@ subroutine  draw_skimmer(x0, dx, Bs, g, mask, mask_is_colored)
     if (.not. allocated(mask_tmp))        allocate(mask_tmp(1:Bs+2*g, 1:Bs+2*g, 1,4))
     mask_tmp    = 0.0_rk
     mask_color  = 0
-    ! call  draw_sponge2D(x0,dx,Bs,g,mask_tmp(:,:,1,:), mask_color(:,:,1))
     call  draw_skimmer2D(x0, dx, Bs, g, mask_tmp(:,:,1,:), mask_color(:,:,1))
+    call  draw_sponge2D(x0,dx,Bs,g,mask_tmp(:,:,1,:), mask_color(:,:,1))
   endif
 
   ! mask coloring is optional, which is mainly used for plotting the different parts

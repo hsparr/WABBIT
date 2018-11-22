@@ -138,7 +138,8 @@ contains
   ! from that. Ghost nodes are assumed to be sync'ed.
   !-----------------------------------------------------------------------------
   subroutine RHS_NStokes( time, u, g, x0, dx, rhs, stage, boundary_flag )
-    use module_funnel, only:mean_quantity, integrate_over_pump_area
+!    use module_funnel, only:mean_quantity, integrate_over_pump_area
+    use module_skimmer, only:mean_quantity, integrate_over_pump_area
     implicit none
 
     ! it may happen that some source terms have an explicit time-dependency
@@ -213,6 +214,13 @@ contains
         call convert_statevector(rhs(:,:,:,:),'pure_variables')
         call integrate_over_pump_area(rhs(:,:,:,:),g,Bs,x0,dx,integral,area)
       endif
+      
+      if (params_ns%case=="skimmer") then
+        ! since rhs was not computed yet we can use it as a temporary storage
+        rhs=u
+        call convert_statevector(rhs(:,:,:,:),'pure_variables')
+        call integrate_over_pump_area(rhs(:,:,:,:),g,Bs,x0,dx,integral,area)
+      endif
 
     case ("post_stage")
       !-------------------------------------------------------------------------
@@ -220,6 +228,11 @@ contains
       !-------------------------------------------------------------------------
       ! this stage is called only once, not for each block.
       if (params_ns%case=="funnel") then
+        ! reduce sum on each block to global sum
+        call mean_quantity(integral,area)
+      endif
+
+      if (params_ns%case=="skimmer") then
         ! reduce sum on each block to global sum
         call mean_quantity(integral,area)
       endif
@@ -319,7 +332,7 @@ contains
       !
       ! called for each block.
 
-      if (maxval(abs(u))>1.0e5) then
+      if (maxval(abs(u))>1.0e16) then
         call abort(6661,"ns fail: very very large values in state vector.")
       endif
       ! compute mean density and pressure
