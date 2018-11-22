@@ -8,6 +8,7 @@ module module_navier_stokes_cases
 
     use module_navier_stokes_params
     use module_funnel
+    use module_skimmer
     use module_ns_penalization
     use module_simple_geometry
     use module_shock
