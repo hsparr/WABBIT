@@ -28,7 +28,7 @@ module module_skimmer
   !**********************************************************************************************
   ! These are the important routines that are visible to WABBIT:
   !**********************************************************************************************
-  PUBLIC :: integrate_over_pump_area,read_params_skimmer,mean_quantity,draw_skimmer, &
+  PUBLIC :: integrate_over_pump_area_skimmer,read_params_skimmer,mean_quantity_skimmer,draw_skimmer, &
             set_inicond_skimmer,skimmer_penalization2D
   !**********************************************************************************************
 
@@ -46,13 +46,14 @@ module module_skimmer
 ! identifyers of the different parts of the skimmer
 ! they are used in the array mask_color
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  integer(kind=2),parameter :: color_capillary  =6
-  integer(kind=2),parameter :: color_outlet     =5
-  integer(kind=2),parameter :: color_plates     =2
-  integer(kind=2),parameter :: color_walls      =3
-  integer(kind=2),parameter :: color_pumps_2    =4
-  integer(kind=2),parameter :: color_pumps_1    =4
-  integer(kind=2),parameter :: color_pumps_sink =1
+  integer(kind=2),parameter :: color_capillary    =6
+  integer(kind=2),parameter :: color_outlet       =5
+  integer(kind=2),parameter :: color_plates       =2
+  integer(kind=2),parameter :: color_walls        =3
+  integer(kind=2),parameter :: color_pumps_2      =8
+  integer(kind=2),parameter :: color_pumps_1      =4
+  integer(kind=2),parameter :: color_pumps_sink_1 =1
+  integer(kind=2),parameter :: color_pumps_sink_2 =7
 
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -78,7 +79,7 @@ module module_skimmer
       real(kind=rk)       ::alpha_1               =-1.0_rk !
       real(kind=rk)       ::alpha_2               =-1.0_rk !
       real(kind=rk)       ::l_sk1_in              =-1.0_rk !
-      real(kind=rk)       ::l_sk1_out             =-1.0_rk !
+!      real(kind=rk)       ::l_sk2_in             =-1.0_rk !
  
       real(kind=rk)       ::length                =-1.0_rk ! total length of funnel
       real(kind=rk)       ::slope                 =-1.0_rk ! slope of funnel
@@ -95,9 +96,12 @@ module module_skimmer
       real(kind=rk)       ::inlet_pressure       !
       real(kind=rk)       ::outlet_pressure       !
       real(kind=rk)       ::outlet_density
-      real(kind=rk)       ::pump_speed       !
-      real(kind=rk)       ::pump_density      !
-      real(kind=rk)       ::pump_pressure     !
+      real(kind=rk)       ::pump_speed_1       !
+      real(kind=rk)       ::pump_speed_2       !
+      real(kind=rk)       ::pump_density_1      !
+      real(kind=rk)       ::pump_density_2      !
+      real(kind=rk)       ::pump_pressure_1     !
+      real(kind=rk)       ::pump_pressure_2     !
       type(type_skimmer_plate), allocatable:: plate(:)
   end type type_skimmer
 
@@ -136,8 +140,8 @@ contains
       call read_param_mpi(FILE, 'skimmer', 'minimal_inner_diameter', dmin, domain_size(2)/4.0_rk )
       call read_param_mpi(FILE, 'skimmer', 'angle_alpha_1'      ,skimmer%alpha_1 , 30.0_rk)            
       call read_param_mpi(FILE, 'skimmer', 'angle_alpha_2'         ,skimmer%alpha_2 , 30.0_rk)
-      call read_param_mpi(FILE, 'skimmer', 'skimmer_funnel_length_in' , skimmer%l_sk1_in, 1.0_rk)
-      call read_param_mpi(FILE, 'skimmer', 'skimmer_funnel_length_out', skimmer%l_sk1_out, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'skimmer_1_funnel_length_in' , skimmer%l_sk1_in, 1.0_rk)
+!      call read_param_mpi(FILE, 'skimmer', 'skimmer_2_funnel_length_in', skimmer%l_sk2_in, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'Number_of_plates'      , skimmer%nr_plates, 30 )
       call read_param_mpi(FILE, 'skimmer', 'Number_of_focus_plates', nr_focus_plates, 15)
       call read_param_mpi(FILE, 'skimmer', 'Temperatur_of_plates'  , skimmer%temperatur, 300.0_rk)
@@ -171,10 +175,8 @@ contains
       skimmer%plates_thickness     = skimmer%length/(2.0_rk*skimmer%nr_plates)
       skimmer%first_plate_thickness= skimmer%plates_thickness
       skimmer%plates_distance      = (skimmer%length-skimmer%nr_plates*skimmer%plates_thickness)/(skimmer%nr_plates-1)
-      skimmer%slope                = (dmax - dmin)/((nr_focus_plates-2)*(skimmer%plates_distance+skimmer%plates_thickness))
     else
       ! convert diameter slope to slope in y=slope*x
-      skimmer%slope  = skimmer%slope/(skimmer%plates_distance+skimmer%plates_thickness)*0.5_rk
       skimmer%length = skimmer%first_plate_thickness &
       + skimmer%plates_thickness*(skimmer%nr_plates-1)+skimmer%plates_distance*(skimmer%nr_plates-1)
       if ( skimmer%length+2*skimmer%wall_thickness_x>domain_size(1)) then
@@ -193,7 +195,8 @@ contains
     end if   
     skimmer%jet_radius           = skimmer%jet_radius/2.0_rk !inner radius of cappilary
     skimmer%r_out_cappilary      = skimmer%jet_radius*1.5_rk  !outer radius of cappilary
-    skimmer%pump_density         = 0
+    skimmer%pump_density_1         = 0
+    skimmer%pump_density_2         = 0
     ! we pump the full left half of the chamber:
 !    skimmer%pump_diameter        = (domain_size(1)-2.0_rk*skimmer%wall_thickness_x-skimmer%plates_thickness)*0.5_rk
 !    skimmer%pump_x_center       = domain_size(1)-skimmer%wall_thickness_x-skimmer%pump_diameter*1.0_rk
@@ -206,7 +209,8 @@ contains
                                                           , skimmer%inlet_velocity(1:params%dim))
     call read_param_mpi(FILE, 'skimmer', 'inlet_density'   , skimmer%inlet_density  , 1.0_rk )
     call read_param_mpi(FILE, 'skimmer', 'inlet_pressure'  , skimmer%inlet_pressure, 1.0_rk )
-    call read_param_mpi(FILE, 'skimmer', 'pump_speed'      , skimmer%pump_speed, 30.0_rk )
+    call read_param_mpi(FILE, 'skimmer', 'pump_speed_1'      , skimmer%pump_speed_1, 30.0_rk )
+    call read_param_mpi(FILE, 'skimmer', 'pump_speed_2'      , skimmer%pump_speed_2, 30.0_rk )
     call read_param_mpi(FILE, 'skimmer', 'outlet_pressure' , skimmer%outlet_pressure, 1.0_rk)
     skimmer%outlet_density=skimmer%outlet_pressure/(params_ns%Rs*skimmer%temperatur)
     if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness_x .or. &
@@ -312,34 +316,32 @@ end subroutine draw_skimmer
 
 
 
-  subroutine integrate_over_pump_area(u,g,Bs,x0,dx,integral,area)
+  subroutine integrate_over_pump_area_skimmer(u,g,Bs,x0,dx,integral)
       implicit none
       !---------------------------------------------------------------
       integer(kind=ik), intent(in):: Bs, g            !< grid parameter (g ghostnotes,Bs Bulk)
       real(kind=rk), intent(in)   :: u(:,:,:,:)       !< statevector in PURE VARIABLES \f$ (rho,u,v,w,p) \f$
       real(kind=rk),  intent(in)  :: x0(3), dx(3)     !< spacing and origin of block
-      real(kind=rk),intent(out)   :: integral(5), area!< mean values
+      real(kind=rk),intent(out)   :: integral(10)      !< mean values
       !---------------------------------------------------------------
 
       if ( params_ns%dim==2 ) then
-        call integrate_over_pump_area2D(u(:,:,1,:),g,Bs,x0(1:2),dx(1:2),integral(1:4),area)
+        call integrate_over_pump_area_skimmer2D(u(:,:,1,:),g,Bs,x0(1:2),dx(1:2),integral(1:10))
       end if
 
-  end subroutine integrate_over_pump_area
+  end subroutine integrate_over_pump_area_skimmer
 
 
 
 
 
-  subroutine mean_quantity(integral,area)
-      !> area of taking the mean
-      real(kind=rk),intent(in)    :: area
+  subroutine mean_quantity_skimmer(integral)
       !> integral over the area
       real(kind=rk),intent(inout) :: integral(1:)
 
       ! temporary values
       real(kind=rk),allocatable,save :: tmp(:)
-      real(kind=rk)                  :: A
+      real(kind=rk)                  :: A_1, A_2
       integer(kind=ik)               :: mpierr,Nq
 
 
@@ -350,17 +352,18 @@ end subroutine draw_skimmer
 
       ! integrate over all procs
       call MPI_ALLREDUCE(tmp  ,integral, Nq , MPI_DOUBLE_PRECISION, MPI_SUM, WABBIT_COMM, mpierr)
-      call MPI_ALLREDUCE(area ,A       , 1  , MPI_DOUBLE_PRECISION, MPI_SUM, WABBIT_COMM, mpierr)
 
-      if ( .not. abs(A) > 0) then
+      if ( .not. abs(A_1) > 0 .or. .not. abs(A_2)> 0 ) then
         call abort(24636,"Error [skimmer.f90]: only chuck norris can devide by zero!!")
       endif
-
+      A_1 = integral(5)
+      A_2 = integral(10)
       !devide by the area of the region
-      integral = integral / A
-      skimmer%pump_density = integral(rhoF)
-      skimmer%pump_pressure = integral(pF)
-  end subroutine mean_quantity
+      skimmer%pump_density_1 = integral(1)/ A_1
+      skimmer%pump_pressure_1 = integral(4)/A_1
+      skimmer%pump_density_2 = integral(6)/A_2
+      skimmer%pump_pressure_2 = integral(9)/A_2
+  end subroutine mean_quantity_skimmer
 
 
 

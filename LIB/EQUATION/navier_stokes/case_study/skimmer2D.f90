@@ -118,7 +118,8 @@ subroutine draw_sponge2D(x0, dx, Bs, g, mask, mask_color)
               if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
               mask(ix,iy,2:3)   = mask(ix,iy,2:3)+chi
               mask_color(ix,iy) = color_pumps_1
-              else
+              endif 
+              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then 
               mask(ix,iy,2:3)   = mask(ix,iy,2:3)+chi
               mask_color(ix,iy) = color_pumps_2
               endif
@@ -127,10 +128,17 @@ subroutine draw_sponge2D(x0, dx, Bs, g, mask, mask_color)
             ! mass and energy sink
             chi=  draw_pumps_sink(x,r,skimmer,h)
             if (chi>0.0_rk) then
-              mask_color(ix,iy) = color_pumps_sink
+              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
+              mask_color(ix,iy) = color_pumps_sink_1
               mask(ix,iy,1) = mask(ix,iy,1)+chi
               mask(ix,iy,4) = mask(ix,iy,4)+chi
-            endif
+              endif
+              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then 
+              mask_color(ix,iy) = color_pumps_sink_2
+              mask(ix,iy,1) = mask(ix,iy,1)+chi
+              mask(ix,iy,4) = mask(ix,iy,4)+chi
+              endif
+             endif
 
             ! Inlet flow: Capillary
             ! ---------------------
@@ -173,7 +181,7 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
     real(kind=rk)     :: x, y, r, h,velocity
     real(kind=rk)     :: rho,chi,v_ref,dq,u,v,p,C_inv
     integer(kind=ik)  :: ix, iy,n                                    ! loop variables
-    real(kind=rk)     :: velocity_pump,rho_pump,pressure_pump, &    ! outlets and inlets
+    real(kind=rk)     :: velocity_pump_1,rho_pump_1,pressure_pump_1,velocity_pump_2,rho_pump_2,pressure_pump_2, &    ! outlets and inlets
                       rho_capillary,u_capillary,v_capillary,p_capillary, &
                       p_2nd_pump_stage,rho_2nd_pump_stage
     real(kind=rk)     ::jet_smooth_width,pump_smooth_width  ! smooth width of jet and pumpsponges (boundarylayerthickness)
@@ -184,10 +192,13 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
     u_capillary       =skimmer%inlet_velocity(1)
     v_capillary       =skimmer%inlet_velocity(2)
     rho_capillary     =skimmer%inlet_density
-    rho_pump          =skimmer%pump_density
+    rho_pump_1        =skimmer%pump_density_1
+    rho_pump_2        =skimmer%pump_density_2
     p_capillary       =skimmer%inlet_pressure
-    velocity_pump     =skimmer%pump_speed
-    pressure_pump     =skimmer%pump_pressure
+    velocity_pump_1   =skimmer%pump_speed_1
+    velocity_pump_2   =skimmer%pump_speed_2
+    pressure_pump_1   =skimmer%pump_pressure_1
+    pressure_pump_2   =skimmer%pump_pressure_2
     p_2nd_pump_stage  =skimmer%outlet_pressure
     rho_2nd_pump_stage=skimmer%outlet_density
 
@@ -231,11 +242,12 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
 
             ! Outlet flow: PUMPS
             ! ------------------
-            if (mask_color(ix,iy) == color_pumps_1 .and. mask_color(ix,iy)==color_pumps_2) then
-              v_ref=velocity_pump*jet_stream(abs(x-(skimmer%plate(1)%x0(1)+skimmer%plates_thickness)*0.5_rk), &
+            
+            if (mask_color(ix,iy) == color_pumps_1 .and. mask_color(ix,iy)== color_pumps_2) then
+              v_ref=velocity_pump_1*jet_stream(abs(x-(skimmer%plate(1)%x0(1)+skimmer%wall_thickness_x)*0.5_rk), &
                                             (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width) &
-                    +velocity_pump*jet_stream(abs(x+skimmer%plates_thickness-(skimmer%plate(1)%x0(1)+skimmer%plates_thickness)*0.5_rk), &
-                            (skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width)
+              +velocity_pump_2*jet_stream(abs(x-(domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk), &
+                    (domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width)
                
                Phi_ref(ix,iy,2) = 0
                C_inv=C_eta_inv
@@ -246,9 +258,14 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
               endif
             endif
             ! mass and energy sink
-            if (mask_color(ix,iy)==color_pumps_sink) then
-              Phi_ref(ix,iy,1) = rho_pump
-              Phi_ref(ix,iy,4) = pressure_pump
+            if (mask_color(ix,iy)==color_pumps_sink_1 ) then
+              Phi_ref(ix,iy,rhoF) = rho_pump_1 
+              Phi_ref(ix,iy,pF) = pressure_pump_1
+              C_inv=C_eta_inv
+            endif
+            if (mask_color(ix,iy)==color_pumps_sink_2 ) then
+              Phi_ref(ix,iy,rhoF) = rho_pump_2 
+              Phi_ref(ix,iy,pF) = pressure_pump_2
               C_inv=C_eta_inv
             endif
 
@@ -540,7 +557,7 @@ end function draw_sink
 !==========================================================================
   !> Integrates the flow field close to the pump outlet,
   !> and computes the area of the intagration region.
-  subroutine integrate_over_pump_area2D(u,g,Bs,x0,dx,integral,area)
+  subroutine integrate_over_pump_area_skimmer2D(u,g,Bs,x0,dx,integral)
       implicit none
 
       !> grid parameter (g ghostnotes,Bs Bulk)
@@ -550,11 +567,11 @@ end function draw_sink
       !> spacing and origin of block
       real(kind=rk), dimension(2), intent(in)          :: x0, dx
       !> mean density
-      real(kind=rk),intent(out)                      :: integral(4), area
+      real(kind=rk),intent(out)                      :: integral(10) 
 
       real(kind=rk)                                    :: h,r,y,x,r0,width
       !temporal data field
-      real(kind=rk),dimension(5)                       :: tmp
+      real(kind=rk),dimension(10)                       :: tmp
 
       integer(kind=ik)                                 :: ix,iy
 
@@ -566,18 +583,20 @@ end function draw_sink
        do iy=g+1, Bs+g
          y = dble(iy-(g+1)) * dx(2) + x0(2)
          r = abs(y-R_domain)
+        if  ( r>r0 .and. r<r0+width) then
          do ix=g+1, Bs+g
               x = dble(ix-(g+1)) * dx(1) + x0(1)
-              if (abs((x-skimmer%plate(1)%x0(1))*0.5_rk)<= (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk .and. &
-
-                  r>r0 .and. r<r0+width) then
+                if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1)) then 
                 tmp(1:4)  = tmp(1:4)+ u(ix,iy,:)
                 tmp(5)    = tmp(5)  + 1.0_rk
-              endif
+              else if (x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then
+                tmp(6:9)  = tmp(6:9)+ u(ix,iy,:)
+                tmp(10)    = tmp(10)  + 1.0_rk
+               endif
           enddo
+         endif
         enddo
-        integral  = integral + tmp(1:4) *dx(1)*dx(2)
-        area      = area     + tmp(5)   *dx(1)*dx(2)
+        integral  = integral + tmp *dx(1)*dx(2)
 
-  end subroutine integrate_over_pump_area2D
+  end subroutine integrate_over_pump_area_skimmer2D
   !==========================================================================
