@@ -180,7 +180,7 @@ contains
     integer(kind=2)          , intent(in):: boundary_flag(3)
 
     ! Area of mean_density
-    real(kind=rk)    ,save             :: integral(10),area
+    real(kind=rk) ,save               :: integral(1:10),area
 
 
     ! local variables
@@ -198,6 +198,7 @@ contains
       ! performs initializations in the RHS module, such as resetting integrals
       integral= 0.0_rk
       area    = 0.0_rk
+      
 
     case ("integral_stage")
       !-------------------------------------------------------------------------
@@ -215,13 +216,14 @@ contains
         rhs=u
         call convert_statevector(rhs(:,:,:,:),'pure_variables')
         call integrate_over_pump_area(rhs(:,:,:,:),g,Bs,x0,dx,integral,area)
-      endif
+      endif 
       
       if (params_ns%case=="skimmer") then
         ! since rhs was not computed yet we can use it as a temporary storage
         rhs=u
         call convert_statevector(rhs(:,:,:,:),'pure_variables')
-        call integrate_over_pump_area_skimmer(rhs(:,:,:,:),g,Bs,x0,dx,integral)
+        call integrate_over_pump_area_skimmer(rhs(:,:,:,:),g,Bs,x0,dx,integral) 
+!        write (*,*) "integralllll=", integral
       endif
 
     case ("post_stage")
@@ -237,7 +239,9 @@ contains
       if (params_ns%case=="skimmer") then
         ! reduce sum on each block to global sum
         call mean_quantity_skimmer(integral)
+!        write (*,*) "integral22=", integral
       endif
+      
 
     case ("local_stage")
       !-------------------------------------------------------------------------
@@ -382,7 +386,7 @@ contains
     integer(kind=ik)            :: Bs, mpierr,ix,iy
     real(kind=rk),save          :: area
     real(kind=rk), allocatable  :: mask(:,:,:)
-    real(kind=rk)               :: eta_inv,tmp(10),y,x,r
+    real(kind=rk)               :: eta_inv,tmp(5),y,x,r
 
     ! compute the size of blocks
     Bs = size(u,1) - 2*g
@@ -424,7 +428,7 @@ contains
 
       if (params_ns%dim==2) then
         ! compute density and pressure only in physical domain
-        tmp(1:10) =0.0_rk
+        tmp(1:5) =0.0_rk
         ! we do not want to sum over redudant points so exclude Bs+g!!!
         do iy=g+1, Bs+g-1
           y = dble(iy-(g+1)) * dx(2) + x0(2)

@@ -1,4 +1,5 @@
 
+
 !-----------------------------------------------------------------
 !> \file
 !> \brief
@@ -151,7 +152,6 @@ contains
       call read_param_mpi(FILE, 'skimmer', 'plates_thickness'         , skimmer%plates_thickness, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'first_plate_thickness'    , skimmer%first_plate_thickness, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'distance_between_plates'  , skimmer%plates_distance, 1.0_rk)
-      call read_param_mpi(FILE, 'skimmer', 'diameter_slope_per_plate'  , skimmer%slope, 1.0_rk)
        ! this parameters are global in skimmer module!
       Rs         =params%Rs
       gamma_     =params%gamma_
@@ -165,11 +165,9 @@ contains
       skimmer%wall_thickness_x       = 0.05*domain_size(1)
       skimmer%wall_thickness_y       = 0.05*domain_size(2)
       skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness_x*2.0_rk
-      skimmer%slope                = (dmax - dmin)
 
      if ( skimmer%plates_thickness  < 0.0_rk .or. &
       skimmer%plates_distance   <0.0_rk .or. &
-      skimmer%slope             <0.0_rk .or. &
       skimmer%plates_thickness  <0.0_rk ) then !default values
       skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness_x*2.0_rk
       skimmer%plates_thickness     = skimmer%length/(2.0_rk*skimmer%nr_plates)
@@ -197,11 +195,6 @@ contains
     skimmer%r_out_cappilary      = skimmer%jet_radius*1.5_rk  !outer radius of cappilary
     skimmer%pump_density_1         = 0
     skimmer%pump_density_2         = 0
-    ! we pump the full left half of the chamber:
-!    skimmer%pump_diameter        = (domain_size(1)-2.0_rk*skimmer%wall_thickness_x-skimmer%plates_thickness)*0.5_rk
-!    skimmer%pump_x_center       = domain_size(1)-skimmer%wall_thickness_x-skimmer%pump_diameter*1.0_rk
-!    skimmer%pump_x_center_r        = domain_size(1)-skimmer%wall_thickness_x-skimmer%pump_diameter*0.5_rk 
-  ! the pump is located at the left half of the skimmer chamber
     ! READ IN Capillary inlet flow
     ! ----------------------------
     skimmer%inlet_velocity=(/ 0.0_rk, 0.0_rk, 0.0_rk /)
@@ -217,9 +210,6 @@ contains
     skimmer%outer_diameter >domain_size(2)-2.0_rk*skimmer%wall_thickness_y) then
       call abort(5032,"ERROR [skimmer.f90]:skimmer is larger then simulation domain!")
     endif
-!    if ( skimmer%pump_diameter>domain_size(2)-2*skimmer%wall_thickness_x ) then
-!        call abort(3464,"ERROR [module_skimmer]: your pump diameter is larger then the vacuum chamber!!")
-!    end if
     !initialice geometry of ion skimmer plates
     call init_plates(skimmer) 
 end subroutine read_params_skimmer
@@ -303,7 +293,7 @@ end subroutine draw_skimmer
       if (params_ns%dim==3) then
         u( :, :, :, UzF) = (1-mask)*u_init(2)*sqrt(rho_init) !flow in z
       endif
-      ! if ( params_ns%geometry=="funnel" ) then
+      ! if ( params_ns%geometry=="skimmer" ) then
       !   do iy=g+1, Bs+g
       !       !initial y-velocity negative in lower half and positive in upper half
       !       y_rel = dble(iy-(g+1)) * dx(2) + x0(2) - params_ns%domain_size(2)*0.5_rk
@@ -328,7 +318,6 @@ end subroutine draw_skimmer
       if ( params_ns%dim==2 ) then
         call integrate_over_pump_area_skimmer2D(u(:,:,1,:),g,Bs,x0(1:2),dx(1:2),integral(1:10))
       end if
-
   end subroutine integrate_over_pump_area_skimmer
 
 
@@ -337,13 +326,14 @@ end subroutine draw_skimmer
 
   subroutine mean_quantity_skimmer(integral)
       !> integral over the area
-      real(kind=rk),intent(inout) :: integral(1:)
+      real(kind=rk),intent(inout) :: integral(10)
 
       ! temporary values
       real(kind=rk),allocatable,save :: tmp(:)
       real(kind=rk)                  :: A_1, A_2
       integer(kind=ik)               :: mpierr,Nq
-
+     
+               
 
       Nq = size(integral,1)
       if ( .not. allocated(tmp) ) allocate(tmp(Nq))
@@ -353,16 +343,22 @@ end subroutine draw_skimmer
       ! integrate over all procs
       call MPI_ALLREDUCE(tmp  ,integral, Nq , MPI_DOUBLE_PRECISION, MPI_SUM, WABBIT_COMM, mpierr)
 
-      if ( .not. abs(A_1) > 0 .or. .not. abs(A_2)> 0 ) then
-        call abort(24636,"Error [skimmer.f90]: only chuck norris can devide by zero!!")
-      endif
+!      write(*,*) "integr=", integral  
       A_1 = integral(5)
       A_2 = integral(10)
+      write (*,*) "A_1=", A_1  
+      write (*,*) "A_2=", A_2
+      if ( .not.  A_1>  0 .or. .not. A_2> 0 ) then
+        call abort(24636,"Error [skimmer.f90]: only chuck norris can devide by zero!!")
+      endif
       !devide by the area of the region
       skimmer%pump_density_1 = integral(1)/ A_1
       skimmer%pump_pressure_1 = integral(4)/A_1
       skimmer%pump_density_2 = integral(6)/A_2
       skimmer%pump_pressure_2 = integral(9)/A_2
+      write (*,*) "pump_density_1=", skimmer%pump_density_1  
+      write (*,*) "pump_density_2=", skimmer%pump_density_2
+  
   end subroutine mean_quantity_skimmer
 
 

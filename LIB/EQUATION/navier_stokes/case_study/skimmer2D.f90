@@ -150,13 +150,13 @@ subroutine draw_sponge2D(x0, dx, Bs, g, mask, mask_color)
 
             ! Outlet flow: Transition to 2pump
             ! ---------------------
-            chi=  draw_outlet(x,r,skimmer,h)
+!            chi=  draw_outlet(x,r,skimmer,h)
             !   chi=  draw_sink(x,y,skimmer,h)
-              if (chi>0.0_rk) then
-                mask_color(ix,iy) = color_outlet
-                mask(ix,iy,1)     = mask(ix,iy,1)+chi
-                mask(ix,iy,3:4)   = mask(ix,iy,3:4)+chi
-              endif
+!              if (chi>0.0_rk) then
+!                mask_color(ix,iy) = color_outlet
+!                mask(ix,iy,1)     = mask(ix,iy,1)+chi
+!                mask(ix,iy,3:4)   = mask(ix,iy,3:4)+chi
+!              endif
 
        end do
     end do
@@ -184,7 +184,7 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
     real(kind=rk)     :: velocity_pump_1,rho_pump_1,pressure_pump_1,velocity_pump_2,rho_pump_2,pressure_pump_2, &    ! outlets and inlets
                       rho_capillary,u_capillary,v_capillary,p_capillary, &
                       p_2nd_pump_stage,rho_2nd_pump_stage
-    real(kind=rk)     ::jet_smooth_width,pump_smooth_width  ! smooth width of jet and pumpsponges (boundarylayerthickness)
+    real(kind=rk)     ::jet_smooth_width,pump_smooth_width_1 ,pump_smooth_width_2 ! smooth width of jet and pumpsponges (boundarylayerthickness)
     ! -----------------------------------------------------------------
 
     ! initialice parameters
@@ -211,12 +211,19 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
       !call abort('ERROR [skimmer.f90]: discretication constant dy to large')
     endif
 
-    if (3*dx(1)<=0.1_rk*((skimmer%plates_thickness+skimmer%plate(1)%x0(1))*0.5_rk)) then
-      pump_smooth_width = 0.025_rk*(skimmer%wall_thickness_x*0.5_rk)
+    if (3*dx(1)<=0.1_rk*(skimmer%wall_thickness_x-skimmer%plates_thickness+skimmer%plate(1)%x0(1)))then! .and. 3*dx(1)<=0.1_rk*(domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)) then
+      pump_smooth_width_1 = 0.025_rk*(skimmer%wall_thickness_x-skimmer%plates_thickness+skimmer%plate(1)%x0(1))
     else
-      pump_smooth_width = 3*h
+      pump_smooth_width_1 = 3*h
+      !call abort('ERROR [skimmer.f90]: discretication constant dy to large')
+    endif   
+    if (3*dx(1)<=0.1_rk*(domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)) then
+      pump_smooth_width_2 = 0.025_rk*(domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)
+    else
+      pump_smooth_width_2 = 3*h
       !call abort('ERROR [skimmer.f90]: discretication constant dy to large')
     endif
+  
     ! smooth width in x and y direction
     do iy=1, Bs+2*g
        y = dble(iy-(g+1)) * dx(2) + x0(2)
@@ -238,16 +245,16 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
               Phi_ref(ix,iy,3) = 0.0_rk                     ! no velocity in y
               Phi_ref(ix,iy,4) = rho*Rs*skimmer%temperatur   ! pressure set according to
               C_inv=C_eta_inv
-            endif                                           ! the temperature of the funnel
+            endif                                           ! the temperature of the skimmer 
 
             ! Outlet flow: PUMPS
             ! ------------------
             
             if (mask_color(ix,iy) == color_pumps_1 .and. mask_color(ix,iy)== color_pumps_2) then
               v_ref=velocity_pump_1*jet_stream(abs(x-(skimmer%plate(1)%x0(1)+skimmer%wall_thickness_x)*0.5_rk), &
-                                            (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width) &
+                                            (skimmer%plate(1)%x0(1)-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width_1) &
               +velocity_pump_2*jet_stream(abs(x-(domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk), &
-                    (domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width)
+                    (domain_size(1)-skimmer%plate(1)%x0(1)+skimmer%plates_thickness-skimmer%wall_thickness_x)*0.5_rk ,pump_smooth_width_2)
                
                Phi_ref(ix,iy,2) = 0
                C_inv=C_eta_inv
@@ -282,13 +289,13 @@ subroutine  compute_penal2D(mask_color,mask,phi, x0, dx, Bs, g ,phi_ref)
 
             ! Outlet flow: Transition to 2pump
             ! ---------------------
-              if (mask_color(ix,iy)==color_outlet) then
-                Phi_ref(ix,iy,1) = rho_2nd_pump_stage
+!              if (mask_color(ix,iy)==color_outlet) then
+!                Phi_ref(ix,iy,1) = rho_2nd_pump_stage
                 !Phi_ref(ix,iy,2) = 0
-                Phi_ref(ix,iy,3) = 0
-                Phi_ref(ix,iy,4) = p_2nd_pump_stage
-                C_inv=C_sp_inv
-              endif
+!                Phi_ref(ix,iy,3) = 0
+!                Phi_ref(ix,iy,4) = p_2nd_pump_stage
+!                C_inv=C_sp_inv
+!              endif
               ! add penalization strength to mask
               mask(ix,iy,:)=C_inv*mask(ix,iy,:)
        end do
@@ -382,7 +389,7 @@ function draw_walls(x,r,skimmer,h)
   endif
   ! attach cappilary to wall in EAST
   if (  r > skimmer%jet_radius  ) then
-      mask=mask+hardstep(x+skimmer%wall_thickness_x-skimmer%plate(1)%x0(1)+skimmer%l_sk1_in-skimmer%plates_thickness)*hardstep(r-skimmer%r_out_cappilary)
+      mask=mask+hardstep(x+skimmer%wall_thickness_x-skimmer%plate(1)%x0(1)+skimmer%l_sk1_in-skimmer%plates_thickness+h*0.5_rk)*hardstep(r-skimmer%r_out_cappilary*1.5_rk)
 
          !mask=mask+smoothstep(x,h)*smoothstep(r-skimmer%r_out_cappilary,h)
   endif
@@ -415,7 +422,7 @@ function draw_pumps_volume_flow(x,r,skimmer,h)
 
   mask  =0
   width =skimmer%wall_thickness_x*0.333_rk
-  r0    =(R_domain-skimmer%wall_thickness_x)
+  r0    =(R_domain-skimmer%wall_thickness_y)
   if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
        x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then 
        mask = soft_bump2(r,r0,width,h)
@@ -438,8 +445,8 @@ function draw_pumps_sink(x,r,skimmer,h)
   real(kind=rk)                         ::r0,mask, draw_pumps_sink,width,depth
  
   draw_pumps_sink  = 0.0_rk
-  r0    =(R_domain-skimmer%wall_thickness_x*0.666_rk)
-  depth =skimmer%wall_thickness_x*0.3_rk
+  r0    =(R_domain-skimmer%wall_thickness_y*0.666_rk)
+  depth =skimmer%wall_thickness_y*0.3_rk
 
 if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
        x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< domain_size(1)-skimmer%wall_thickness_x) then
@@ -460,7 +467,7 @@ function draw_jet(x,r,skimmer,h)
 
   !if (r< skimmer%jet_radius) then
     ! wall in EAST
-    draw_jet=soft_bump2(x,skimmer%wall_thickness_x*0.5_rk+h,length_of_jet,h)*smoothstep(r-skimmer%jet_radius+h,h)
+    draw_jet=soft_bump2(x,skimmer%wall_thickness_x*0.5_rk,length_of_jet,h)*smoothstep(r-skimmer%jet_radius+h,h)
 
     !draw_jet=smoothstep(x-skimmer%wall_thickness,h)-smoothstep(x-skimmer%wall_thickness/2.0_rk,h)
   !else
@@ -478,8 +485,8 @@ function draw_outlet(x,r,skimmer,h)
 
          ! wall in WEST
     !draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
-draw_outlet=soft_bump2(x,domain_size(1)-skimmer%wall_thickness_x,skimmer%wall_thickness_x*0.5_rk,h)&
-            *smoothstep(r-(skimmer%min_inner_diameter*0.5_rk-h),h)
+!draw_outlet=soft_bump2(x,domain_size(1)-skimmer%wall_thickness_x,skimmer%wall_thickness_x*0.5_rk,h) &
+!            *smoothstep(r-(skimmer%min_inner_diameter*0.5_rk-h),h)
 
 end function draw_outlet
 
@@ -575,11 +582,12 @@ end function draw_sink
 
       integer(kind=ik)                                 :: ix,iy
 
+!        write (*,*) "integral=" ,integral 
        h  = 1.5_rk*max(dx(1), dx(2))
       ! calculate mean density close to the pump
-      width =skimmer%wall_thickness_x
+      width =skimmer%wall_thickness_y
       tmp   =  0.0_rk
-      r0    =(R_domain-2*skimmer%wall_thickness_x)
+      r0    =(R_domain-2*skimmer%wall_thickness_y)
        do iy=g+1, Bs+g
          y = dble(iy-(g+1)) * dx(2) + x0(2)
          r = abs(y-R_domain)
@@ -597,6 +605,6 @@ end function draw_sink
          endif
         enddo
         integral  = integral + tmp *dx(1)*dx(2)
-
+      !  write (*,*) "integral=" , integral
   end subroutine integrate_over_pump_area_skimmer2D
   !==========================================================================
