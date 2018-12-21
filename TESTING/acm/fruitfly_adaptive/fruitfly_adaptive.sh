@@ -4,19 +4,20 @@
 # This file contains one specific unit test, and it is called by unittest.sh
 #-------------------------------------------------------------------------------
 # what parameter file
-dir="./TESTING/acm/acm_cyl_adaptive_newsponge_mach/"
-params=${dir}"cylinder.ini"
+dir="./TESTING/acm/fruitfly_adaptive/"
+params=${dir}"fruitfly.ini"
 happy=0
 sad=0
 echo "testing artificial compressibility"
 
 # list of prefixes the test generates
-prefixes=(ux uy vor p mask sponge)
-# list of possible times
-times=(000000000000 000000042500 000000085000)
+prefixes=(ux uy uz p mask)
+# list of possible times (no need to actually have them)
+times=(000000000000 000000020582)
 
 # run actual test
 ${mpi_command} ./wabbit ${params} ${memory}
+
 
 echo "============================"
 echo "run done, analyzing data now"
