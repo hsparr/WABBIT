@@ -113,7 +113,8 @@ subroutine balance_load( params, lgt_block, hvy_block, hvy_neighbor, lgt_active,
     ! First step: define how many blocks each mpirank should have.
     !---------------------------------------------------------------------------------
     call set_desired_num_blocks_per_rank(params, dist_list, opt_dist_list, lgt_n, hvy_n)
-    call write_block_distribution( params, dist_list, "block_dist.dat" )
+!    call write_block_distribution( params, dist_list, "block_dist.dat" )
+
     ! at this point, we know how many blocks a mpirank has: "dist_list(myrank+1)"
     ! and how many it should have, if equally distributed: "opt_dist_list(myrank+1)"
 
@@ -308,7 +309,7 @@ subroutine balance_load( params, lgt_block, hvy_block, hvy_neighbor, lgt_active,
             if (lgt_n > 1) then
                 call quicksort_ik(sfc_sorted_list, 1, lgt_n, 1, 2)
             end if
-            call toc( params, "balance_load (SFC+sort)", MPI_wtime()-t1 )
+            call toc( "balance_load (SFC+sort)", MPI_wtime()-t1 )
 
             !---------------------------------------------------------------------------------
             ! 2nd: plan communication (fill list of blocks to transfer)
@@ -376,7 +377,7 @@ subroutine balance_load( params, lgt_block, hvy_block, hvy_neighbor, lgt_active,
             !---------------------------------------------------------------------------------
             call block_xfer( params, sfc_com_list, com_i, lgt_block, hvy_block, lgt_active, &
                  lgt_n, lgt_sortednumlist, hvy_tmp )
-            call toc( params, "balance_load (comm)", MPI_wtime()-t1 )
+            call toc( "balance_load (comm)", MPI_wtime()-t1 )
 
         case default
             call abort(2009182147, "[balance_load.f90] ERROR: block distribution scheme is unknown")
@@ -384,5 +385,5 @@ subroutine balance_load( params, lgt_block, hvy_block, hvy_neighbor, lgt_active,
     end select
 
     ! timing
-    call toc( params, "balance_load (TOTAL)", MPI_wtime()-t0 )
+    call toc( "balance_load (TOTAL)", MPI_wtime()-t0 )
 end subroutine balance_load

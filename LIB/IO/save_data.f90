@@ -27,7 +27,8 @@
 !
 ! ********************************************************************************************
 
-subroutine save_data(iteration, time, params, lgt_block, hvy_block, lgt_active, lgt_n, hvy_n, hvy_tmp, hvy_active )
+subroutine save_data(iteration, time, params, lgt_block, hvy_block, lgt_active, lgt_n, &
+    hvy_n, hvy_tmp, hvy_active )
 
     !---------------------------------------------------------------------------------------------
     ! modules
@@ -106,5 +107,5 @@ subroutine save_data(iteration, time, params, lgt_block, hvy_block, lgt_active, 
 
     enddo
 
-    call toc( params, "save_data", MPI_wtime()-t0 )
+    call toc( "save_data", MPI_wtime()-t0 )
 end subroutine save_data

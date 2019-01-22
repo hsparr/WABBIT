@@ -71,16 +71,18 @@ module module_skimmer
   type :: type_skimmer
       real(kind=rk)       ::outer_diameter         ! outer diameter
       real(kind=rk)       ::max_inner_diameter     ! maximal inner diameter
+      real(kind=rk)       ::max_inner_diameter_2     ! maximal inner diameter skimmer 2
       real(kind=rk)       ::min_inner_diameter    =-1.0_rk ! minimal inner diameter
       integer(kind=ik)    ::nr_plates             =0_ik ! Number of plates
       real(kind=rk)       ::plates_distance       =-1.0_rk ! distance between origin of plates
+      real(kind=rk)       ::plates_distance_2       =-1.0_rk ! distance between origin of plates
       real(kind=rk)       ::plates_thickness      =-1.0_rk !
       real(kind=rk)       ::first_plate_thickness =-1.0_rk
       real(kind=rk)       ::temperatur            =-1.0_rk ! temperatur of plates
       real(kind=rk)       ::alpha_1               =-1.0_rk !
       real(kind=rk)       ::alpha_2               =-1.0_rk !
       real(kind=rk)       ::l_sk1_in              =-1.0_rk !
-!      real(kind=rk)       ::l_sk2_in             =-1.0_rk !
+      real(kind=rk)       ::l_sk2_in             =-1.0_rk !
  
       real(kind=rk)       ::length                =-1.0_rk ! total length of funnel
       real(kind=rk)       ::slope                 =-1.0_rk ! slope of funnel
@@ -128,7 +130,6 @@ contains
       !> params structure of navier stokekimm
       type(type_params_ns),intent(inout)  :: params
 
-      real(kind=rk)                 :: dmax,dmin,dmax_sk1,dmax_sk2
       integer(kind=ik)              :: nr_focus_plates
       ! inifile structure
       !type(inifile) :: FILE
@@ -137,21 +138,22 @@ contains
       ! READ IN geometry
       ! ----------------
       call read_param_mpi(FILE, 'skimmer', 'outer_diameter'        , skimmer%outer_diameter, R_domain*0.5_rk )
-      call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter', dmax, domain_size(2)/3.0_rk )
-      call read_param_mpi(FILE, 'skimmer', 'minimal_inner_diameter', dmin, domain_size(2)/4.0_rk )
+      call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter', skimmer%max_inner_diameter, domain_size(2)/3.0_rk )
+      call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter_skimmer_2',skimmer%max_inner_diameter_2, domain_size(2)/3.0_rk )
+      call read_param_mpi(FILE, 'skimmer', 'minimal_inner_diameter', skimmer%min_inner_diameter, domain_size(2)/4.0_rk )
       call read_param_mpi(FILE, 'skimmer', 'angle_alpha_1'      ,skimmer%alpha_1 , 30.0_rk)            
       call read_param_mpi(FILE, 'skimmer', 'angle_alpha_2'         ,skimmer%alpha_2 , 30.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'skimmer_1_funnel_length_in' , skimmer%l_sk1_in, 1.0_rk)
-!      call read_param_mpi(FILE, 'skimmer', 'skimmer_2_funnel_length_in', skimmer%l_sk2_in, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'skimmer_2_funnel_length_in', skimmer%l_sk2_in, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'Number_of_plates'      , skimmer%nr_plates, 30 )
       call read_param_mpi(FILE, 'skimmer', 'Number_of_focus_plates', nr_focus_plates, 15)
       call read_param_mpi(FILE, 'skimmer', 'Temperatur_of_plates'  , skimmer%temperatur, 300.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'jet_diameter'          , skimmer%jet_radius, R_domain*0.5_rk)
-      !call read_param_mpi(FILE, 'skimmer', 'pump_diameter'         , skimmer%pump_diameter, domain_size(1)/5.0_rk)
       !optional values
       call read_param_mpi(FILE, 'skimmer', 'plates_thickness'         , skimmer%plates_thickness, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'first_plate_thickness'    , skimmer%first_plate_thickness, 1.0_rk)
-      call read_param_mpi(FILE, 'skimmer', 'distance_between_plates'  , skimmer%plates_distance, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'distance_first_skimmer_Wallwest'  , skimmer%plates_distance, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'distance_first_skimmer_to2nd_skimmer'  , skimmer%plates_distance_2, 1.0_rk)
        ! this parameters are global in skimmer module!
       Rs         =params%Rs
       gamma_     =params%gamma_
@@ -159,9 +161,7 @@ contains
       R_domain   =params%domain_size(2)*0.5_rk
       C_sp_inv   =1.0_rk/params%C_sp
       C_eta_inv   =1.0_rk/params%C_eta
-      skimmer%max_inner_diameter   = dmax
-      skimmer%min_inner_diameter   = dmin
-      params%inicond_width        = dmax
+      params%inicond_width        = skimmer%max_inner_diameter
       skimmer%wall_thickness_x       = 0.05*domain_size(1)
       skimmer%wall_thickness_y       = 0.05*domain_size(2)
       skimmer%length               = domain_size(1)*0.95_rk-skimmer%wall_thickness_x*2.0_rk
@@ -173,7 +173,7 @@ contains
       skimmer%plates_thickness     = skimmer%length/(2.0_rk*skimmer%nr_plates)
       skimmer%first_plate_thickness= skimmer%plates_thickness
       skimmer%plates_distance      = (skimmer%length-skimmer%nr_plates*skimmer%plates_thickness)/(skimmer%nr_plates-1)
-    else
+      else
       ! convert diameter slope to slope in y=slope*x
       skimmer%length = skimmer%first_plate_thickness &
       + skimmer%plates_thickness*(skimmer%nr_plates-1)+skimmer%plates_distance*(skimmer%nr_plates-1)
@@ -343,11 +343,10 @@ end subroutine draw_skimmer
       ! integrate over all procs
       call MPI_ALLREDUCE(tmp  ,integral, Nq , MPI_DOUBLE_PRECISION, MPI_SUM, WABBIT_COMM, mpierr)
 
-!      write(*,*) "integr=", integral  
       A_1 = integral(5)
       A_2 = integral(10)
-      write (*,*) "A_1=", A_1  
-      write (*,*) "A_2=", A_2
+!      write (*,*) "A_1=", A_1  
+!      write (*,*) "A_2=", A_2
       if ( .not.  A_1>  0 .or. .not. A_2> 0 ) then
         call abort(24636,"Error [skimmer.f90]: only chuck norris can devide by zero!!")
       endif
@@ -356,8 +355,8 @@ end subroutine draw_skimmer
       skimmer%pump_pressure_1 = integral(4)/A_1
       skimmer%pump_density_2 = integral(6)/A_2
       skimmer%pump_pressure_2 = integral(9)/A_2
-      write (*,*) "pump_density_1=", skimmer%pump_density_1  
-      write (*,*) "pump_density_2=", skimmer%pump_density_2
+      write (*,*) "pump_pressure_1=", skimmer%pump_pressure_1  
+      write (*,*) "pump_pressure_2=", skimmer%pump_pressure_2
   
   end subroutine mean_quantity_skimmer
 

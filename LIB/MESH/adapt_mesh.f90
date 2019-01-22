@@ -96,7 +96,7 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
 !---------------------------------------------------------------------------------------------
 ! main body
 
-    !> we iterate until the number of blocks is constant (note: as only coarseing
+    !> we iterate until the number of blocks is constant (note: as only coarsening
     !! is done here, no new blocks arise that could compromise the number of blocks -
     !! if it's constant, its because no more blocks are refined)
     do while ( lgt_n_old /= lgt_n )
@@ -109,21 +109,21 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         ! synchronize ghostnodes, grid has changed, not in the first one, but in later loops
         t0 = MPI_Wtime()
         call sync_ghosts( params, lgt_block, hvy_block, hvy_neighbor, hvy_active, hvy_n )
-        call toc( params, "adapt_mesh (sync_ghosts)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (sync_ghosts)", MPI_Wtime()-t0 )
 
         !! calculate detail on the entire grid. Note this is a wrapper for block_coarsening_indicator, which
         !! acts on a single block only
         t0 = MPI_Wtime()
         call grid_coarsening_indicator( time, params, lgt_block, hvy_block, hvy_tmp, lgt_active, lgt_n, &
         hvy_active, hvy_n, indicator, iteration, hvy_neighbor)
-        call toc( params, "adapt_mesh (grid_coarsening_indicator)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (grid_coarsening_indicator)", MPI_Wtime()-t0 )
 
 
         !> (b) check if block has reached maximal level, if so, remove refinement flags
         t0 = MPI_Wtime()
         call respect_min_max_treelevel( params, lgt_block, lgt_active, lgt_n )
         ! CPU timing (only in debug mode)
-        call toc( params, "adapt_mesh (respect_min_max_treelevel)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (respect_min_max_treelevel)", MPI_Wtime()-t0 )
 
 
         !> (c) unmark blocks that cannot be coarsened due to gradedness and completeness
@@ -131,7 +131,7 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         call ensure_gradedness( params, lgt_block, hvy_neighbor, lgt_active, lgt_n, &
         lgt_sortednumlist, hvy_active, hvy_n )
         ! CPU timing (only in debug mode)
-        call toc( params, "adapt_mesh (ensure_gradedness)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (ensure_gradedness)", MPI_Wtime()-t0 )
 
 
         !> (d) adapt the mesh, i.e. actually merge blocks
@@ -139,10 +139,10 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         call coarse_mesh( params, lgt_block, hvy_block, lgt_active, lgt_n, lgt_sortednumlist, &
         hvy_active, hvy_n, hvy_tmp )
         ! CPU timing (only in debug mode)
-        call toc( params, "adapt_mesh (coarse_mesh)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (coarse_mesh)", MPI_Wtime()-t0 )
 
 
-        ! the following calls are indeed required (threshold->ghosts->neighbors->active)
+        ! the following calls are indeed required
         ! update lists of active blocks (light and heavy data)
         ! update list of sorted nunmerical treecodes, used for finding blocks
         t0 = MPI_Wtime()
@@ -154,7 +154,7 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         ! update neighbor relations
         call update_neighbors( params, lgt_block, hvy_neighbor, lgt_active, lgt_n, lgt_sortednumlist, hvy_active, hvy_n )
         ! CPU timing (only in debug mode)
-        call toc( params, "adapt_mesh (update neighbors)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (update neighbors)", MPI_Wtime()-t0 )
 
         iteration = iteration + 1
     end do
@@ -181,7 +181,7 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         call balance_load( params, lgt_block, hvy_block, hvy_neighbor, lgt_active, &
         lgt_n, lgt_sortednumlist, hvy_active, hvy_n, hvy_tmp )
 
-        call toc( params, "adapt_mesh (balance_load)", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (balance_load)", MPI_Wtime()-t0 )
         never_balanced_load = .false.
 
         !> load balancing destroys the lists again, so we have to create them one last time to
@@ -197,11 +197,11 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         t0 = MPI_Wtime()
         call update_neighbors( params, lgt_block, hvy_neighbor, lgt_active, lgt_n, lgt_sortednumlist, hvy_active, hvy_n )
         ! CPU timing (only in debug mode)
-        call toc( params, "adapt_mesh (update neighbors) ", MPI_Wtime()-t0 )
+        call toc( "adapt_mesh (update neighbors) ", MPI_Wtime()-t0 )
     endif
 
     ! time remaining parts of this routine.
-    call toc( params, "adapt_mesh (lists)", t_misc )
-    call toc( params, "adapt_mesh (TOTAL)", MPI_wtime()-t1)
+    call toc( "adapt_mesh (lists)", t_misc )
+    call toc( "adapt_mesh (TOTAL)", MPI_wtime()-t1)
     counter = counter + 1
 end subroutine adapt_mesh
