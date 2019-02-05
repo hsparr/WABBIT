@@ -270,22 +270,6 @@ contains
       ! operators etc.
       ! called for each block.
       if (params_ns%dim==2) then
-<<<<<<< HEAD
-        select case(params_ns%coordinates)
-        case ("cartesian")
-          if (.not. ALL(boundary_flag(:)==0)) then
-            call compute_boundary_2D( time, g, Bs, dx, x0, u(:,:,1,:), boundary_flag)
-         endif
-
-
-
-          call  RHS_2D_navier_stokes(g, Bs,x0, (/dx(1),dx(2)/),u(:,:,1,:), rhs(:,:,1,:),boundary_flag)
-        case("cylindrical")
-          call RHS_2D_cylinder(g, Bs,x0, (/dx(1),dx(2)/),u(:,:,1,:), rhs(:,:,1,:))
-        case default
-          call abort(7772,"ERROR [module_navier_stokes]: This coordinate system is not known!")
-        end select
-=======
         ! In the 2D case we have a RHS which is optimized (very fast) for
         ! periodic boundary conditions and one for various boundaries conditions.
         ! The latter one makes use of sparse implementation of the stencil and
@@ -309,7 +293,6 @@ contains
           ! RHS fully periodic on every boundary
           call  RHS_2D_navier_stokes_periodic(g, Bs,x0, (/dx(1),dx(2)/),u(:,:,1,:), rhs(:,:,1,:))
         endif
->>>>>>> upstream/master
       else
          call RHS_3D_navier_stokes(g, Bs,x0, (/dx(1),dx(2),dx(3)/), u, rhs)
       endif
@@ -704,11 +687,8 @@ contains
       !
       ! called for each block.
 
-<<<<<<< HEAD
+
       if (maxval(abs(u))>1.0e16) then
-=======
-      if (maxval(abs(u))>1.0e10) then
->>>>>>> upstream/master
         call abort(6661,"ns fail: very very large values in state vector.")
       endif
       ! compute mean density and pressure

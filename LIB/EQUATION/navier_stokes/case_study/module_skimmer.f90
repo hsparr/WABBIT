@@ -137,7 +137,7 @@ contains
 
       ! READ IN geometry
       ! ----------------
-      call read_param_mpi(FILE, 'skimmer', 'outer_diameter'        , skimmer%outer_diameter, R_domain*0.5_rk )
+      call read_param_mpi(FILE, 'skimmer', 'outer_diameter'        , skimmer%outer_diameter,domain_size(2)*0.9_rk )
       call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter', skimmer%max_inner_diameter, domain_size(2)/3.0_rk )
       call read_param_mpi(FILE, 'skimmer', 'maximal_inner_diameter_skimmer_2',skimmer%max_inner_diameter_2, domain_size(2)/3.0_rk )
       call read_param_mpi(FILE, 'skimmer', 'minimal_inner_diameter', skimmer%min_inner_diameter, domain_size(2)/4.0_rk )
@@ -158,7 +158,11 @@ contains
       Rs         =params%Rs
       gamma_     =params%gamma_
       domain_size=params%domain_size
-      R_domain   =params%domain_size(2)*0.5_rk
+      if (params%coordinates=="cylindrical") then
+        R_domain   =params%domain_size(2) + params%r_min
+      else
+        R_domain   =params%domain_size(2)*0.5_rk
+      endif
       C_sp_inv   =1.0_rk/params%C_sp
       C_eta_inv   =1.0_rk/params%C_eta
       params%inicond_width        = skimmer%max_inner_diameter
@@ -207,7 +211,7 @@ contains
     call read_param_mpi(FILE, 'skimmer', 'outlet_pressure' , skimmer%outlet_pressure, 1.0_rk)
     skimmer%outlet_density=skimmer%outlet_pressure/(params_ns%Rs*skimmer%temperatur)
     if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness_x .or. &
-    skimmer%outer_diameter >domain_size(2)-2.0_rk*skimmer%wall_thickness_y) then
+    skimmer%outer_diameter*0.5_rk >R_domain-skimmer%wall_thickness_y) then
       call abort(5032,"ERROR [skimmer.f90]:skimmer is larger then simulation domain!")
     endif
     !initialice geometry of ion skimmer plates
@@ -219,16 +223,17 @@ end subroutine read_params_skimmer
 !> Allocate and compute mask for 2D/3D funnel. The different parts of the mask can be
 !> colored if the boolean mask_is_colored is true. If the boolean is false then mask returns
 !> only the mask of the solid objects (like walls and plates)
-subroutine  draw_skimmer(x0, dx, Bs, g, mask, mask_is_colored)
+subroutine  draw_skimmer(x_0, delta_x, Bs, g, mask, mask_is_colored)
   implicit none
   ! -----------------------------------------------------------------
   integer(kind=ik), intent(in)  :: Bs, g        !< grid parameter
-  real(kind=rk), intent(in)     :: x0(3), dx(3) !< coordinates of block and block spacinf
+  real(kind=rk), intent(in)     :: x_0(3), delta_x(3) !< coordinates of block and block spacinf
   real(kind=rk), intent(inout)  :: mask(:,:,:)    !< mask function
   logical, optional, intent(in) :: mask_is_colored
   integer(kind=2),allocatable   :: mask_color(:,:,:)!< identifyers of mask parts 
   logical, save :: is_colored =.false.
   real(kind=rk), allocatable  :: mask_tmp(:,:,:,:)    !< mask function for the statevector
+  real(kind=rk) :: r0, dr, dx, x0      !< cylindrical coordinates
   ! -----------------------------------------------------------------
   if (size(mask,1) /= Bs+2*g) call abort(127109,"wrong array size!")
   ! if variable is present the default (false) is overwritten by the input
@@ -239,15 +244,17 @@ subroutine  draw_skimmer(x0, dx, Bs, g, mask, mask_is_colored)
     if (.not. allocated(mask_tmp))        allocate(mask_tmp(1:Bs+2*g, 1:Bs+2*g, 1:Bs+2*g,5))
     mask_tmp    = 0.0_rk
     mask_color  = 0
-!    call  draw_skimmer3D(x0, dx, Bs, g, mask_tmp, mask_color)
-!    call  draw_sponge3D(x0,dx,Bs,g,mask_tmp,mask_color)
+!    call  draw_skimmer3D(x_0, delta_x, Bs, g, mask_tmp, mask_color)
+!    call  draw_sponge3D(x_0,delta_x,Bs,g,mask_tmp,mask_color)
   else
     if (.not. allocated(mask_color))  allocate(mask_color(1:Bs+2*g, 1:Bs+2*g, 1))
     if (.not. allocated(mask_tmp))        allocate(mask_tmp(1:Bs+2*g, 1:Bs+2*g, 1,4))
     mask_tmp    = 0.0_rk
     mask_color  = 0
-    call  draw_skimmer2D(x0, dx, Bs, g, mask_tmp(:,:,1,:), mask_color(:,:,1))
-    call  draw_sponge2D(x0,dx,Bs,g,mask_tmp(:,:,1,:), mask_color(:,:,1))
+    call  cartesian2cylinder(x_0(1:2),delta_x(1:2),dx,dr,x0,r0)
+     ! do not switch draw_funnel2D and draw_sponge2D becasue maks are reseted in draw_funnel2D
+    call  draw_skimmer2D(r0, dr, x0, dx, Bs, g, mask_tmp(:,:,1,:), mask_color(:,:,1))
+    call  draw_sponge2D(r0,dr, x0, dx, Bs,g,mask_tmp(:,:,1,:), mask_color(:,:,1))
   endif
 
   ! mask coloring is optional, which is mainly used for plotting the different parts

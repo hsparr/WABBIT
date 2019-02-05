@@ -12,7 +12,7 @@ module module_navier_stokes_cases
     use module_ns_penalization
     use module_simple_geometry
     use module_shock
-
+    use module_pipe_flow
 
     implicit none
     ! I usually find it helpful to use the private keyword by itself initially, which specifies
@@ -45,6 +45,8 @@ contains
     call read_params_geometry(params_ns,FILE)
   case('shock_tube')
     call read_params_shock_tube(params_ns,FILE)
+  case('pipe_flow')
+    call read_params_pipe_flow(params_ns,FILE)
   case('no')
 
   case default
@@ -116,6 +118,8 @@ end subroutine read_case_parameters
        call funnel_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
      case('skimmer')
        call skimmer_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
+     case('pipe_flow')
+       call pipe_flow_penalization2D(Bs, g, x0, dx, mask, phi_ref)
      case('no')
        return
      case default
@@ -185,6 +189,8 @@ end subroutine read_case_parameters
         call draw_skimmer(x0, dx, Bs, g, mask,is_colored)
       case('shock_tube')
         call draw_simple_shock(mask(:,:,:), x0, dx, Bs, g )
+      case('pipe_flow')
+        call draw_pipe_sponges(mask, x0, dx, Bs, g )
       case('no')
         return
       case default
