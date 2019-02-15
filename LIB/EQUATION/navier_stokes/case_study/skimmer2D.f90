@@ -156,13 +156,13 @@ subroutine draw_sponge2D(r0, dr, x0 , dx, Bs, g, mask, mask_color)
 
             ! Outlet flow: Transition to 2pump
             ! ---------------------
-            chi=  draw_outlet(x,r,skimmer,h)
+!            chi=  draw_outlet(x,r,skimmer,h)
             !   chi=  draw_sink(x,y,skimmer,h)
-              if (chi>0.0_rk) then
-                mask_color(ix,ir) = color_outlet
-                mask(ix,ir,1)     = mask(ix,ir,1)+chi
-                mask(ix,ir,3:4)   = mask(ix,ir,3:4)+chi
-              endif
+!              if (chi>0.0_rk) then
+!                mask_color(ix,ir) = color_outlet
+!                mask(ix,ir,1)     = mask(ix,ir,1)+chi
+!                mask(ix,ir,3:4)   = mask(ix,ir,3:4)+chi
+!              endif
 
        end do
     end do
@@ -235,68 +235,69 @@ subroutine  compute_penal2D(mask_color,mask,phi,r0, dr, x0, dx, Bs, g ,phi_ref)
             ! ------
             if  (mask_color(ix,ir) == color_plates &
             .or. mask_color(ix,ir) == color_walls ) then
-              Phi_ref(ix,ir,2) = 0.0_rk                     ! no velocity in x
-              Phi_ref(ix,ir,3) = 0.0_rk                     ! no velocity in y
-              Phi_ref(ix,ir,4) = rho*Rs*skimmer%temperatur   ! pressure set according to
+              Phi_ref(ix,ir,rhoF) = params_ns%initial_density
+              Phi_ref(ix,ir,UxF) = 0.0_rk                     ! no velocity in x
+              Phi_ref(ix,ir,UyF) = 0.0_rk                     ! no velocity in y
+              Phi_ref(ix,ir,pF) = rho*Rs*skimmer%temperatur   ! pressure set according to
               C_inv=C_eta_inv
             endif                                           ! the temperature of the skimmer 
 
-            ! Outlet flow: PUMPS
+!            ! Outlet flow: PUMPS
             ! ------------------
             
             if (mask_color(ix,ir) == color_pumps_1)then            
                 v_ref_1=velocity_pump_1
-               Phi_ref(ix,ir,2) = 0
+               Phi_ref(ix,ir,UxF) = 0
                C_inv=C_eta_inv
               if (r0>0.0_rk) then
-                Phi_ref(ix,ir,3) = rho*v_ref_1
+                Phi_ref(ix,ir,UyF) = rho*v_ref_1
               else
-                Phi_ref(ix,ir,3) = -rho*v_ref_1
+                Phi_ref(ix,ir,UyF) = -rho*v_ref_1
               endif
             endif 
           
             if( mask_color(ix,ir)== color_pumps_2) then
              v_ref_2=velocity_pump_2
-               Phi_ref(ix,ir,2) = 0
+               Phi_ref(ix,ir,UxF) = 0
                C_inv=C_eta_inv
                if (r0> 0.0_rk) then
-                Phi_ref(ix,ir,3) = rho*v_ref_2
+                Phi_ref(ix,ir,UyF) = rho*v_ref_2
               else
-                Phi_ref(ix,ir,3) = -rho*v_ref_2
+                Phi_ref(ix,ir,UyF) = -rho*v_ref_2
               endif
             endif
             ! mass and energy sink
             if (mask_color(ix,ir)==color_pumps_sink_1 ) then
               Phi_ref(ix,ir,rhoF) = rho_pump_1 
-              Phi_ref(ix,ir,pF) = pressure_pump_1
+             Phi_ref(ix,ir,pF) = pressure_pump_1
               C_inv=C_eta_inv
             endif
             if (mask_color(ix,ir)==color_pumps_sink_2 ) then
               Phi_ref(ix,ir,rhoF) = rho_pump_2 
               Phi_ref(ix,ir,pF) = pressure_pump_2
               C_inv=C_eta_inv
-            endif
+           endif
 
             ! Inlet flow: Capillary
             ! ---------------------
             if (mask_color(ix,ir)==color_capillary) then
               dq               =jet_stream(r,skimmer%jet_radius,jet_smooth_width)
               C_inv=C_sp_inv
-              Phi_ref(ix,ir,1) =  rho_capillary
-              Phi_ref(ix,ir,2) =  rho_capillary*u_capillary*dq
-              Phi_ref(ix,ir,3) =  rho_capillary*v_capillary
-              Phi_ref(ix,ir,4) =  p_capillary  !rho*Rs*skimmer%temperatur * (1 - dq) + p_capillary * dq
+              Phi_ref(ix,ir,rhoF) =  rho_capillary
+              Phi_ref(ix,ir,UxF) =  rho_capillary*u_capillary*dq
+              Phi_ref(ix,ir,UyF) =  rho_capillary*v_capillary
+              Phi_ref(ix,ir,pF) =  p_capillary  !rho*Rs*skimmer%temperatur * (1 - dq) + p_capillary * dq
             endif
 
             ! Outlet flow: Transition to 2pump
             ! ---------------------
-              if (mask_color(ix,ir)==color_outlet) then
-                Phi_ref(ix,ir,1) = rho_2nd_pump_stage
-                !Phi_ref(ix,ir,2) = 0
-                Phi_ref(ix,ir,3) = 0
-                Phi_ref(ix,ir,4) = p_2nd_pump_stage
-                C_inv=C_sp_inv
-              endif
+!              if (mask_color(ix,ir)==color_outlet) then
+!                Phi_ref(ix,ir,rhoF) = rho_2nd_pump_stage
+!                !Phi_ref(ix,ir,UxF) = 0
+!                Phi_ref(ix,ir,UyF) = 0
+!                Phi_ref(ix,ir,pF) = p_2nd_pump_stage
+!                C_inv=C_sp_inv
+!              endif
               ! add penalization strength to mask
               mask(ix,ir,:)=C_inv*mask(ix,ir,:)
        end do
@@ -402,7 +403,7 @@ function draw_walls(x,r,skimmer,h)
        x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x<skimmer%plate(2)%x0(1) ) then 
         mask=mask+hardstep(R_domain-skimmer%wall_thickness_y-r)
   else
-         mask=mask+hardstep(R_domain-skimmer%wall_thickness_y-r)
+         mask=mask+hardstep(R_domain-0.333_rk*skimmer%wall_thickness_y-r)
   endif
 
   ! wall in east
@@ -497,35 +498,35 @@ function draw_jet(x,r,skimmer,h)
 end function draw_jet
 
 
-function draw_outlet(x,r,skimmer,h)
+!function draw_outlet(x,r,skimmer,h)
 
-  real(kind=rk),    intent(in)          :: x, r, h
-  type(type_skimmer),intent(in)         ::skimmer
+!  real(kind=rk),    intent(in)          :: x, r, h
+!  type(type_skimmer),intent(in)         ::skimmer
 
-  real(kind=rk)                         ::draw_outlet
+!  real(kind=rk)                         ::draw_outlet
 
          ! wall in WEST
     !draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
-draw_outlet=soft_bump2(x,skimmer%plate(2)%x0(1)+skimmer%plates_thickness,domain_size(1)-skimmer%plate(2)%x0(1)-skimmer%plates_thickness-skimmer%wall_thickness_x,h) &
-            *smoothstep(r-skimmer%max_inner_diameter_2*0.5_rk+skimmer%wall_thickness_y*0.5_rk,h)
+!draw_outlet=soft_bump2(x,skimmer%plate(2)%x0(1)+skimmer%plates_thickness,domain_size(1)-skimmer%plate(2)%x0(1)-skimmer%plates_thickness-skimmer%wall_thickness_x,h) &
+!            *smoothstep(r-skimmer%max_inner_diameter_2*0.5_rk+skimmer%wall_thickness_y*0.5_rk,h)
           !  *smoothstep(r-(skimmer%max_inner_diameter_2-skimmer%wall_thickness_x-h-skimmer%min_inner_diameter),h)
-!  x_sk_2    = (x-(skimmer%plate(2)%x0(1)-skimmer%l_sk2_in+skimmer%plate%width))
-! if(x< skimmer%plate(2)%x0(1)) then
+    !  x_sk_2    = (x-(skimmer%plate(2)%x0(1)-skimmer%l_sk2_in+skimmer%plate%width))
+   ! if(x< skimmer%plate(2)%x0(1)) then
  
-!   r3        = tan(skimmer%alpha_1)*x_sk_2+height 
-! else
-!   r3 = skimmer%plate(2)%x0(1) 
-! endif
+  !   r3        = tan(skimmer%alpha_1)*x_sk_2+height 
+  ! else
+  !   r3 = skimmer%plate(2)%x0(1) 
+  ! endif
 
-!   r4        = tan(skimmer%alpha_2)*x_sk_2+height 
-!  delta_r2     = skimmer%plate(2)%r_out-skimmer%plate(2)%r_in
+  !   r4        = tan(skimmer%alpha_2)*x_sk_2+height 
+  !  delta_r2     = skimmer%plate(2)%r_out-skimmer%plate(2)%r_in
 
-! if (x > plate%width+skimmer%plate(2)%x0(1)-skimmer%l_sk2_in  .and. x <  skimmer%plate(2)%x0(1)+plate%width.and. &
-!    r <r3  .and. r > r4 ) then 
-!     mask =1
-! endif
+  !   if (x > plate%width+skimmer%plate(2)%x0(1)-skimmer%l_sk2_in  .and. x <  skimmer%plate(2)%x0(1)+plate%width.and. &
+  !    r <r3  .and. r > r4 ) then 
+  !     mask =1
+  ! endif
 
-end function draw_outlet
+!end function draw_outlet
 
 
 function draw_sink(x,r,skimmer,h)

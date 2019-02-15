@@ -17,7 +17,7 @@ MFILES = module_precision.f90 module_globals.f90 module_params.f90 module_timing
 	module_physics_metamodule.f90 module_ACM.f90 module_ConvDiff_new.f90 module_bridge_interface.f90 \
 	module_bridge.f90 module_navier_stokes_params.f90 module_helpers.f90 module_insects_integration_flusi_wabbit.f90 \
 	module_insects.f90 module_boundary_conditions.f90 module_funnel.f90 module_navier_stokes_cases.f90\
-	module_simple_geometry.f90 module_shock.f90 module_pipe_flow.f90 module_sparse_operators.f90 module_skimmer.f90
+	module_simple_geometry.f90 module_shock.f90 module_pipe_flow.f90 module_sparse_operators.f90 module_skimmer.f90 module_guderley_problem.f90
 MOBJS := $(MFILES:%.f90=$(OBJDIR)/%.o)
 
 # Source code directories (colon-separated):
@@ -191,11 +191,15 @@ $(OBJDIR)/module_skimmer.o: module_skimmer.f90 $(OBJDIR)/module_precision.o $(OB
 $(OBJDIR)/module_pipe_flow.o: module_pipe_flow.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
+$(OBJDIR)/module_guderley_problem.o: module_guderley_problem.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
+	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
+
 $(OBJDIR)/module_simple_geometry.o: module_simple_geometry.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
 		$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_navier_stokes_cases.o: module_navier_stokes_cases.f90 $(OBJDIR)/module_funnel.o $(OBJDIR)/module_ns_penalization.o\
-	$(OBJDIR)/module_shock.o $(OBJDIR)/module_simple_geometry.o $(OBJDIR)/module_pipe_flow.o $(OBJDIR)/module_skimmer.o
+	$(OBJDIR)/module_shock.o $(OBJDIR)/module_simple_geometry.o $(OBJDIR)/module_pipe_flow.o $(OBJDIR)/module_guderley_problem.o\
+        $(OBJDIR)/module_skimmer.o
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_navier_stokes.o: module_navier_stokes.f90 $(OBJDIR)/module_ns_penalization.o\

@@ -178,7 +178,6 @@ contains
       skimmer%first_plate_thickness= skimmer%plates_thickness
       skimmer%plates_distance      = (skimmer%length-skimmer%nr_plates*skimmer%plates_thickness)/(skimmer%nr_plates-1)
       else
-      ! convert diameter slope to slope in y=slope*x
       skimmer%length = skimmer%first_plate_thickness &
       + skimmer%plates_thickness*(skimmer%nr_plates-1)+skimmer%plates_distance*(skimmer%nr_plates-1)
       if ( skimmer%length+2*skimmer%wall_thickness_x>domain_size(1)) then
