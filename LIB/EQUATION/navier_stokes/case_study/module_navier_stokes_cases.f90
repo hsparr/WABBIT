@@ -88,6 +88,9 @@ end subroutine read_case_parameters
       case('shock_tube')
         call set_inicond_shock_tube(x0, dx, Bs, g, phi )
         return
+      case('Guderley_Problem')
+        call set_inicond_guderley_problem(x0, dx, Bs, g, phi )
+        return
       case default
         set_inicond=.false.
       end select
@@ -123,8 +126,8 @@ end subroutine read_case_parameters
        call skimmer_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
      case('pipe_flow')
        call pipe_flow_penalization2D(Bs, g, x0, dx, mask, phi_ref)
-     case('Guderley_Problem')
-       call guderley_penalization2D(Bs, g, x0, dx, mask, phi_ref)
+!     case('Guderley_Problem')
+!       call guderley_penalization2D(Bs, g, x0, dx, mask, phi_ref)
      case('no')
        return
      case default

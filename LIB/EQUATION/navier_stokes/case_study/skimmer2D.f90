@@ -119,32 +119,32 @@ subroutine draw_sponge2D(r0, dr, x0 , dx, Bs, g, mask, mask_color)
             ! Outlet flow: PUMPS
             ! ------------------
             ! pump volume flow
-            chi=  draw_pumps_volume_flow(x,r,skimmer,h)
-            if (chi>0.0_rk) then
-              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
-              mask(ix,ir,2:3)   = mask(ix,ir,2:3)+chi
-              mask_color(ix,ir) = color_pumps_1
-              endif 
-              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
-              mask(ix,ir,2:3)   = mask(ix,ir,2:3)+chi
-              mask_color(ix,ir) = color_pumps_2
-              endif
-            endif
+!            chi=  draw_pumps_volume_flow(x,r,skimmer,h)
+!            if (chi>0.0_rk) then
+!              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
+!              mask(ix,ir,2:3)   = mask(ix,ir,2:3)+chi
+!              mask_color(ix,ir) = color_pumps_1
+!              endif 
+!              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
+!              mask(ix,ir,2:3)   = mask(ix,ir,2:3)+chi
+!              mask_color(ix,ir) = color_pumps_2
+!              endif
+!            endif
 
             ! mass and energy sink
-            chi=  draw_pumps_sink(x,r,skimmer,h)
-            if (chi>0.0_rk) then
-              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
-              mask_color(ix,ir) = color_pumps_sink_1
-              mask(ix,ir,1) = mask(ix,ir,1)+chi
-              mask(ix,ir,4) = mask(ix,ir,4)+chi
-              endif
-              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
-              mask_color(ix,ir) = color_pumps_sink_2
-              mask(ix,ir,1) = mask(ix,ir,1)+chi
-              mask(ix,ir,4) = mask(ix,ir,4)+chi
-              endif
-             endif
+!            chi=  draw_pumps_sink(x,r,skimmer,h)
+!            if (chi>0.0_rk) then
+!              if (x> skimmer%wall_thickness_x .and. x< skimmer%plate(1)%x0(1)) then
+!              mask_color(ix,ir) = color_pumps_sink_1
+!              mask(ix,ir,1) = mask(ix,ir,1)+chi
+!              mask(ix,ir,4) = mask(ix,ir,4)+chi
+!              endif
+!              if( x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
+!              mask_color(ix,ir) = color_pumps_sink_2
+!              mask(ix,ir,1) = mask(ix,ir,1)+chi
+!              mask(ix,ir,4) = mask(ix,ir,4)+chi
+!              endif
+!             endif
 
             ! Inlet flow: Capillary
             ! ---------------------
@@ -242,41 +242,41 @@ subroutine  compute_penal2D(mask_color,mask,phi,r0, dr, x0, dx, Bs, g ,phi_ref)
               C_inv=C_eta_inv
             endif                                           ! the temperature of the skimmer 
 
-!            ! Outlet flow: PUMPS
+            ! Outlet flow: PUMPS
             ! ------------------
             
-            if (mask_color(ix,ir) == color_pumps_1)then            
-                v_ref_1=velocity_pump_1
-               Phi_ref(ix,ir,UxF) = 0
-               C_inv=C_eta_inv
-              if (r0>0.0_rk) then
-                Phi_ref(ix,ir,UyF) = rho*v_ref_1
-              else
-                Phi_ref(ix,ir,UyF) = -rho*v_ref_1
-              endif
-            endif 
+!            if (mask_color(ix,ir) == color_pumps_1)then            
+!                v_ref_1=velocity_pump_1
+!               Phi_ref(ix,ir,UxF) = 0
+!               C_inv=C_eta_inv
+!              if (r0>0.0_rk) then
+!                Phi_ref(ix,ir,UyF) = rho*v_ref_1
+!              else
+!                Phi_ref(ix,ir,UyF) = -rho*v_ref_1
+!              endif
+!            endif 
           
-            if( mask_color(ix,ir)== color_pumps_2) then
-             v_ref_2=velocity_pump_2
-               Phi_ref(ix,ir,UxF) = 0
-               C_inv=C_eta_inv
-               if (r0> 0.0_rk) then
-                Phi_ref(ix,ir,UyF) = rho*v_ref_2
-              else
-                Phi_ref(ix,ir,UyF) = -rho*v_ref_2
-              endif
-            endif
+!            if( mask_color(ix,ir)== color_pumps_2) then
+!             v_ref_2=velocity_pump_2
+!               Phi_ref(ix,ir,UxF) = 0
+!               C_inv=C_eta_inv
+!               if (r0> 0.0_rk) then
+!                Phi_ref(ix,ir,UyF) = rho*v_ref_2
+!              else
+!                Phi_ref(ix,ir,UyF) = -rho*v_ref_2
+!              endif
+!            endif
             ! mass and energy sink
-            if (mask_color(ix,ir)==color_pumps_sink_1 ) then
-              Phi_ref(ix,ir,rhoF) = rho_pump_1 
-             Phi_ref(ix,ir,pF) = pressure_pump_1
-              C_inv=C_eta_inv
-            endif
-            if (mask_color(ix,ir)==color_pumps_sink_2 ) then
-              Phi_ref(ix,ir,rhoF) = rho_pump_2 
-              Phi_ref(ix,ir,pF) = pressure_pump_2
-              C_inv=C_eta_inv
-           endif
+!            if (mask_color(ix,ir)==color_pumps_sink_1 ) then
+!              Phi_ref(ix,ir,rhoF) = rho_pump_1 
+!             Phi_ref(ix,ir,pF) = pressure_pump_1
+!              C_inv=C_eta_inv
+!            endif
+!            if (mask_color(ix,ir)==color_pumps_sink_2 ) then
+!              Phi_ref(ix,ir,rhoF) = rho_pump_2 
+!              Phi_ref(ix,ir,pF) = pressure_pump_2
+!              C_inv=C_eta_inv
+!           endif
 
             ! Inlet flow: Capillary
             ! ---------------------
@@ -293,10 +293,10 @@ subroutine  compute_penal2D(mask_color,mask,phi,r0, dr, x0, dx, Bs, g ,phi_ref)
             ! ---------------------
 !              if (mask_color(ix,ir)==color_outlet) then
 !                Phi_ref(ix,ir,rhoF) = rho_2nd_pump_stage
-!                !Phi_ref(ix,ir,UxF) = 0
+                !Phi_ref(ix,ir,UxF) = 0
 !                Phi_ref(ix,ir,UyF) = 0
 !                Phi_ref(ix,ir,pF) = p_2nd_pump_stage
-!                C_inv=C_sp_inv
+!                C_inv=C_sp_inv!*1e2
 !              endif
               ! add penalization strength to mask
               mask(ix,ir,:)=C_inv*mask(ix,ir,:)
@@ -439,44 +439,44 @@ function draw_walls(x,r,skimmer,h)
   draw_walls=mask
 end function draw_walls
 
-function draw_pumps_volume_flow(x,r,skimmer,h)
+!function draw_pumps_volume_flow(x,r,skimmer,h)
 
-  real(kind=rk),    intent(in)          :: x, r, h
-  type(type_skimmer),intent(in)         ::skimmer
+!  real(kind=rk),    intent(in)          :: x, r, h
+!  type(type_skimmer),intent(in)         ::skimmer
 
-  real(kind=rk)                         ::  mask, draw_pumps_volume_flow,r0,width
+! real(kind=rk)                         ::  mask, draw_pumps_volume_flow,r0,width
 
-  mask  =0
-  width =skimmer%wall_thickness_x*0.333_rk
-  r0    =(R_domain-skimmer%wall_thickness_y)
-  if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
-       x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
-       mask = soft_bump2(r,r0,width,h)
-  endif
+!  mask  =0
+!  width =skimmer%wall_thickness_x*0.333_rk
+!  r0    =(R_domain-skimmer%wall_thickness_y)
+!  if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
+!       x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
+!       mask = soft_bump2(r,r0,width,h)
+!  endif
 
 
 
-  draw_pumps_volume_flow=mask
-end function draw_pumps_volume_flow
+!  draw_pumps_volume_flow=mask
+!end function draw_pumps_volume_flow
 
-function draw_pumps_sink(x,r,skimmer,h)
+!function draw_pumps_sink(x,r,skimmer,h)
 
-  real(kind=rk),    intent(in)          :: x, r, h
-  type(type_skimmer),intent(in)         ::skimmer
+!  real(kind=rk),    intent(in)          :: x, r, h
+!  type(type_skimmer),intent(in)         ::skimmer
 
-  real(kind=rk)                         ::r0,mask, draw_pumps_sink,width,depth
+!  real(kind=rk)                         ::r0,mask, draw_pumps_sink,width,depth
  
-  draw_pumps_sink  = 0.0_rk
-  r0    =(R_domain-skimmer%wall_thickness_y*0.666_rk)
-  depth =skimmer%wall_thickness_y*0.5_rk
+!  draw_pumps_sink  = 0.0_rk
+!  r0    =(R_domain-skimmer%wall_thickness_y*0.666_rk)
+!  depth =skimmer%wall_thickness_y*0.5_rk
 
-if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
-     x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then
-      mask =soft_bump2(r,r0,depth,h)
-  endif
-  draw_pumps_sink=mask 
+!  if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
+!     x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then
+!      mask =soft_bump2(r,r0,depth,h)
+!  endif
+!  draw_pumps_sink=mask 
 
-end function draw_pumps_sink
+!end function draw_pumps_sink
 
 function draw_jet(x,r,skimmer,h)
 
@@ -506,12 +506,12 @@ end function draw_jet
 !  real(kind=rk)                         ::draw_outlet
 
          ! wall in WEST
-    !draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
-!draw_outlet=soft_bump2(x,skimmer%plate(2)%x0(1)+skimmer%plates_thickness,domain_size(1)-skimmer%plate(2)%x0(1)-skimmer%plates_thickness-skimmer%wall_thickness_x,h) &
+   !!!draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
+!    draw_outlet=soft_bump2(x,skimmer%plate(2)%x0(1)+skimmer%plates_thickness,domain_size(1)-skimmer%plate(2)%x0(1)-skimmer%plates_thickness-skimmer%wall_thickness_x,h) &
 !            *smoothstep(r-skimmer%max_inner_diameter_2*0.5_rk+skimmer%wall_thickness_y*0.5_rk,h)
           !  *smoothstep(r-(skimmer%max_inner_diameter_2-skimmer%wall_thickness_x-h-skimmer%min_inner_diameter),h)
-    !  x_sk_2    = (x-(skimmer%plate(2)%x0(1)-skimmer%l_sk2_in+skimmer%plate%width))
-   ! if(x< skimmer%plate(2)%x0(1)) then
+       !  x_sk_2    = (x-(skimmer%plate(2)%x0(1)-skimmer%l_sk2_in+skimmer%plate%width))
+     ! if(x< skimmer%plate(2)%x0(1)) then
  
   !   r3        = tan(skimmer%alpha_1)*x_sk_2+height 
   ! else
@@ -529,18 +529,18 @@ end function draw_jet
 !end function draw_outlet
 
 
-function draw_sink(x,r,skimmer,h)
+!function draw_sink(x,r,skimmer,h)
 
-  real(kind=rk),    intent(in)          :: x, r, h
-  type(type_skimmer),intent(in)         ::skimmer
+!  real(kind=rk),    intent(in)          :: x, r, h
+!  type(type_skimmer),intent(in)         ::skimmer
 
-  real(kind=rk)                         ::draw_sink,radius
+!  real(kind=rk)                         ::draw_sink,radius
 
-  radius     = sqrt((x-domain_size(1)+skimmer%wall_thickness_x*0.6_rk)**2+r**2)
-  draw_sink  = smoothstep(r-skimmer%min_inner_diameter*0.4_rk,h)
+!  radius     = sqrt((x-domain_size(1)+skimmer%wall_thickness_x*0.6_rk)**2+r**2)
+!  draw_sink  = smoothstep(r-skimmer%min_inner_diameter*0.4_rk,h)
 
 
-end function draw_sink
+!end function draw_sink
 
 
 
