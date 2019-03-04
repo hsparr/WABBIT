@@ -210,7 +210,7 @@ contains
     call read_param_mpi(FILE, 'skimmer', 'outlet_pressure' , skimmer%outlet_pressure, 1.0_rk)
     skimmer%outlet_density=skimmer%outlet_pressure/(params_ns%Rs*skimmer%temperatur)
     if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness_x .or. &
-    skimmer%outer_diameter*0.5_rk >R_domain-skimmer%wall_thickness_y) then
+    skimmer%outer_diameter*0.49_rk >R_domain-skimmer%wall_thickness_y) then
       call abort(5032,"ERROR [skimmer.f90]:skimmer is larger then simulation domain!")
     endif
     !initialice geometry of ion skimmer plates
