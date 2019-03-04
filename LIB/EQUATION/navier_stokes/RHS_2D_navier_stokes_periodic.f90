@@ -109,13 +109,8 @@ subroutine RHS_2D_navier_stokes_periodic( g, Bs, x0, delta_x, phi, rhs)
 
     ! Compute mu and T
     if (dissipation) then
-<<<<<<< HEAD:LIB/EQUATION/navier_stokes/RHS_2D_navier_stokes_periodic.f90
-        do j = 1, Bs+2*g
-            do i = 1, Bs+2*g
-=======
         do j = 1, Bs(2)+2*g
             do i = 1, Bs(1)+2*g
->>>>>>> upstream/master:LIB/EQUATION/navier_stokes/RHS_2D_navier_stokes_periodic.f90
                 T(i,j) = p(i,j) * phi1_inv(i,j) * phi1_inv(i,j) * Rs_inv
             end do
         end do

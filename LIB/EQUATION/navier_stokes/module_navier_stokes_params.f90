@@ -120,12 +120,8 @@ end type type_boundary
         ! number data fields
         integer(kind=ik)                            :: n_eqn
         ! number of block nodes
-<<<<<<< HEAD
-        integer(kind=ik)                            :: Bs,g
-=======
         integer(kind=ik)                            :: g
         integer(kind=ik), dimension(3)              :: Bs
->>>>>>> upstream/master
         ! maximal tree level
         integer(kind=ik)                            :: Jmax
         ! dimension
@@ -235,7 +231,6 @@ contains
     call read_param_mpi(FILE, 'Domain', 'dim', params_ns%dim, 2 )
     call read_param_mpi(FILE, 'Navier_Stokes', 'Coordinate_system', params_ns%coordinates, &
                                                                     params_ns%coordinates )
-
     ! spatial domain size
     params_ns%domain_size = (/ 1.0_rk, 1.0_rk, 1.0_rk /)
     call read_param_mpi(FILE, 'Domain', 'domain_size', params_ns%domain_size(1:params_ns%dim),  params_ns%domain_size(1:params_ns%dim))
@@ -307,15 +302,9 @@ subroutine read_boundary_conditions( FILE )
     type(inifile) ,intent(inout)        :: FILE !> pointer to inifile
     !------------------------------------------------
     integer :: dim,i
-<<<<<<< HEAD
 
     dim=params_ns%dim
 
-=======
-
-    dim=params_ns%dim
-
->>>>>>> upstream/master
     call read_param_mpi(FILE, 'Domain', 'periodic_BC', params_ns%periodic_BC(1:dim), &
                                                        params_ns%periodic_BC(1:dim) )
 
@@ -445,9 +434,6 @@ subroutine init_other_params( FILE )
     call read_param_mpi(FILE, 'Time', 'time_max', params_ns%T_end, 1.0_rk)
 
     call read_param_mpi(FILE, 'Blocks', 'max_treelevel', params_ns%Jmax, 1   )
-<<<<<<< HEAD
-    call read_param_mpi(FILE, 'Blocks', 'number_block_nodes', params_ns%Bs, 1   )
-=======
 
     call read_param_mpi(FILE, 'Blocks', 'number_block_nodes', Bs_str, "empty")
     call merge_blancs(Bs_str)
@@ -479,7 +465,6 @@ subroutine init_other_params( FILE )
     read(Bs_conc, *) Bs_real
     params_ns%Bs = int(Bs_real)
 
->>>>>>> upstream/master
     call read_param_mpi(FILE, 'Blocks', 'number_ghost_nodes', params_ns%g, 1   )
 
 

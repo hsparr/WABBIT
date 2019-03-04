@@ -114,10 +114,6 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
         !! calculate detail on the entire grid. Note this is a wrapper for block_coarsening_indicator, which
         !! acts on a single block only
         t0 = MPI_Wtime()
-<<<<<<< HEAD
-        call grid_coarsening_indicator( time, params, lgt_block, hvy_block, hvy_tmp, lgt_active, lgt_n, &
-        hvy_active, hvy_n, indicator, iteration, hvy_neighbor)
-=======
         if (present(hvy_gridQ) .and. iteration==0) then
             ! note: the grid changes here, so we can use the hvy_grid (which contains masks that do not
             ! explicitly depend on time) only once
@@ -127,7 +123,6 @@ subroutine adapt_mesh( time, params, lgt_block, hvy_block, hvy_neighbor, lgt_act
             call grid_coarsening_indicator( time, params, lgt_block, hvy_block, hvy_tmp, lgt_active, lgt_n, &
             hvy_active, hvy_n, indicator, iteration, hvy_neighbor)
         endif
->>>>>>> upstream/master
         call toc( "adapt_mesh (grid_coarsening_indicator)", MPI_Wtime()-t0 )
 
 

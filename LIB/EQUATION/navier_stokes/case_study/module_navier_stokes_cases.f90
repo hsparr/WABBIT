@@ -1,3 +1,4 @@
+
 !----------------------------------------------------------------
 !> Implementation of all the case studies in Navier Stokes
 !> \details
@@ -8,16 +9,11 @@ module module_navier_stokes_cases
 
     use module_navier_stokes_params
     use module_funnel
-    use module_skimmer
     use module_ns_penalization
     use module_simple_geometry
     use module_shock
     use module_pipe_flow
-<<<<<<< HEAD
-    use module_guderley_problem
-=======
 
->>>>>>> upstream/master
 
     implicit none
     ! I usually find it helpful to use the private keyword by itself initially, which specifies
@@ -44,19 +40,12 @@ contains
   select case ( params_ns%case )
   case ('funnel')
     call read_params_funnel(params_ns,FILE)
-  case ('skimmer')
-    call read_params_skimmer(params_ns,FILE)
   case('simple_geometry')
     call read_params_geometry(params_ns,FILE)
   case('shock_tube')
     call read_params_shock_tube(params_ns,FILE)
   case('pipe_flow')
     call read_params_pipe_flow(params_ns,FILE)
-<<<<<<< HEAD
-  case('Guderley_Problem')
-    call read_params_guderley_problem(params_ns,FILE)
-=======
->>>>>>> upstream/master
   case('no')
 
   case default
@@ -65,6 +54,7 @@ contains
 
 end subroutine read_case_parameters
  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 
 
@@ -90,14 +80,8 @@ end subroutine read_case_parameters
       case('funnel')
         call set_inicond_funnel(x0, dx, Bs, g, phi )
         return
-      case('skimmer')
-        call set_inicond_skimmer(x0, dx, Bs, g, phi )
-        return
       case('shock_tube')
         call set_inicond_shock_tube(x0, dx, Bs, g, phi )
-        return
-      case('Guderley_Problem')
-        call set_inicond_guderley_problem(x0, dx, Bs, g, phi )
         return
       case default
         set_inicond=.false.
@@ -130,17 +114,8 @@ end subroutine read_case_parameters
        call geometry_penalization2D(Bs, g, x0, dx, phi(:,:,rhoF), mask, phi_ref)
      case('funnel')
        call funnel_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
-<<<<<<< HEAD
-     case('skimmer')
-       call skimmer_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
      case('pipe_flow')
        call pipe_flow_penalization2D(Bs, g, x0, dx, mask, phi_ref)
-!     case('Guderley_Problem')
-!       call guderley_penalization2D(Bs, g, x0, dx, mask, phi_ref)
-=======
-     case('pipe_flow')
-       call pipe_flow_penalization2D(Bs, g, x0, dx, mask, phi_ref)
->>>>>>> upstream/master
      case('no')
        return
      case default
@@ -172,8 +147,6 @@ end subroutine read_case_parameters
        call shock_tube_penalization3D(Bs, g, x0, dx, mask, phi_ref)
      case('funnel')
        call funnel_penalization3D(Bs, g, x0, dx, phi, mask, phi_ref)
-!     case('skimmer')
-!       call skimmer_penalization3D(Bs, g, x0, dx, phi, mask, phi_ref
      case('no')
        return
      case default
@@ -202,7 +175,7 @@ end subroutine read_case_parameters
       logical, save :: is_colored =.false.
       ! -----------------------------------------------------------------
       if( present(mask_is_colored)) is_colored=mask_is_colored
-        
+
       select case(params%CASE)
       case('pipe_flow')
         call draw_pipe_sponges(mask, x0, dx, Bs, g )
@@ -210,19 +183,13 @@ end subroutine read_case_parameters
         call draw_geometry(x0, dx, Bs, g, mask)
       case('funnel')
         call draw_funnel(x0, dx, Bs, g, mask,is_colored)
-      case('skimmer')
-        call draw_skimmer(x0, dx, Bs, g, mask,is_colored)
       case('shock_tube')
         call draw_simple_shock(mask(:,:,:), x0, dx, Bs, g )
-      case('pipe_flow')
-        call draw_pipe_sponges(mask, x0, dx, Bs, g )
-      case('Guderley_Problem')
-!        call draw_guderley_sponges(mask, x0, dx, Bs, g )
       case('no')
         return
       case default
         call abort(120601,"ERROR: say whaaaaaaaaaaaaaat, don't know that case:"//params%CASE)
-      end select 
+      end select
 
   end subroutine get_mask
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

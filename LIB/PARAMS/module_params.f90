@@ -91,12 +91,8 @@ module module_params
         integer(kind=ik)                             :: number_blocks=0_ik
         ! number of allocated data fields in heavy data array, number of fields
         ! in heavy work data (depend from time step scheme, ...)
-<<<<<<< HEAD
-        integer(kind=ik)                             :: n_eqn=0_ik
-=======
         integer(kind=ik) :: n_eqn = 0_ik
         integer(kind=ik) :: n_gridQ = 0_ik
->>>>>>> upstream/master
 
         ! block distribution for load balancing (also used for start distribution)
         character(len=80)                            :: block_distribution=""

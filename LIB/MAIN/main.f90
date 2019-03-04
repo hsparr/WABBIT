@@ -131,14 +131,6 @@ program main
     logical                             :: it_is_time_to_save_data=.false., test_failed, keep_running=.true.
     ! flag of write_individual_timings to pass value from params to module_timing
     logical                             :: write_indiv_timings=.false.
-<<<<<<< HEAD
-!---------------------------------------------------------------------------------------------
-! interfaces
-
-!---------------------------------------------------------------------------------------------
-! variables initialization
-=======
->>>>>>> upstream/master
 
     ! init time loop
     time          = 0.0_rk
@@ -188,14 +180,9 @@ program main
     call initialize_communicator(params)
     ! read flag write_individual_timings from params, to be used in module_timings
     call setup_indiv_timings( write_indiv_timings = params%write_individual_timings )
-<<<<<<< HEAD
-    ! have the pysics module read their own parameters
-    call init_physics_modules( params, filename )
-=======
     ! have the pysics module read their own parameters. They also decide how many grid-qtys
     ! they want
     call init_physics_modules( params, filename, params%n_gridQ )
->>>>>>> upstream/master
     ! allocate memory for heavy, light, work and neighbor data
     call allocate_grid(params, lgt_block, hvy_block, hvy_neighbor, lgt_active, &
         hvy_active, lgt_sortednumlist, hvy_work, hvy_tmp, hvy_gridQ)
@@ -364,11 +351,7 @@ program main
         ! Please note that in the current implementation, hvy_tmp also plays the role of a work array
         ! so it is available only during the
         t4 = MPI_wtime()
-<<<<<<< HEAD
-        call update_grid_qyts( time, params, lgt_block, hvy_tmp, hvy_active, hvy_n )
-=======
         call update_grid_qyts( time, params, lgt_block, hvy_gridQ, hvy_active, hvy_n )
->>>>>>> upstream/master
         call toc( "TOPLEVEL: update_grid_qyts", MPI_wtime()-t4)
 
 

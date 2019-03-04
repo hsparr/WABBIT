@@ -120,12 +120,6 @@ subroutine time_stepper(time, dt, params, lgt_block, hvy_block, hvy_work, hvy_gr
             hvy_work(:, :, :, :, hvy_active(k), :) = 0.0_rk
         enddo
     endif
-<<<<<<< HEAD
-
-
-    if (params%time_step_method=="Krylov") then
-=======
->>>>>>> upstream/master
 
 
     if (params%time_step_method=="Krylov") then

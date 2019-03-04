@@ -160,7 +160,6 @@ contains
   !-----------------------------------------------------------------------------
   subroutine RHS_NStokes( time, u, g, x0, dx, rhs, stage, boundary_flag )
     use module_funnel, only:mean_quantity, integrate_over_pump_area
-    use module_skimmer, only:mean_quantity_skimmer, integrate_over_pump_area_skimmer
     implicit none
 
     ! it may happen that some source terms have an explicit time-dependency
@@ -199,7 +198,7 @@ contains
     integer(kind=2)          , intent(in):: boundary_flag(3)
 
     ! Area of mean_density
-    real(kind=rk) ,save               :: integral(1:10),area
+    real(kind=rk)    ,save             :: integral(5),area
 
 
     ! local variables
@@ -220,7 +219,6 @@ contains
       ! performs initializations in the RHS module, such as resetting integrals
       integral= 0.0_rk
       area    = 0.0_rk
-      
 
     case ("integral_stage")
       !-------------------------------------------------------------------------
@@ -238,14 +236,6 @@ contains
         rhs=u
         call convert_statevector(rhs(:,:,:,:),'pure_variables')
         call integrate_over_pump_area(rhs(:,:,:,:),g,Bs,x0,dx,integral,area)
-      endif 
-      
-      if (params_ns%case=="skimmer") then
-        ! since rhs was not computed yet we can use it as a temporary storage
-        rhs=u
-        call convert_statevector(rhs(:,:,:,:),'pure_variables')
-        call integrate_over_pump_area_skimmer(rhs(:,:,:,:),g,Bs,x0,dx,integral) 
-!        write (*,*) "integralllll=", integral
       endif
 
     case ("post_stage")
@@ -257,13 +247,6 @@ contains
         ! reduce sum on each block to global sum
         call mean_quantity(integral,area)
       endif
-
-      if (params_ns%case=="skimmer") then
-        ! reduce sum on each block to global sum
-        call mean_quantity_skimmer(integral)
-!        write (*,*) "integral22=", integral
-      endif
-      
 
     case ("local_stage")
       !-------------------------------------------------------------------------
@@ -321,12 +304,8 @@ contains
     subroutine compute_boundary_2D( time, g, Bs, dx, x0, phi, boundary_flag)
         implicit none
         real(kind=rk), intent(in) :: time
-<<<<<<< HEAD
-        integer(kind=ik), intent(in) :: g, Bs
-=======
         integer(kind=ik), intent(in) :: g
         integer(kind=ik), dimension(3), intent(in) :: Bs
->>>>>>> upstream/master
         real(kind=rk), intent(in) :: dx(1:2), x0(1:2)
         !> datafields, and velocity field
         real(kind=rk), intent(inout) :: phi(:,:,:)
@@ -350,11 +329,7 @@ contains
         ! |     |   v                |     |
         ! ---------------------------------
         ! x->
-<<<<<<< HEAD
-        real(kind=rk)   :: phi_bound(Bs+2*g,params_ns%n_eqn),normal_vector(Bs+2*g,2)
-=======
         real(kind=rk)   :: phi_bound(Bs(1)+2*g,params_ns%n_eqn),normal_vector(Bs(2)+2*g,2)
->>>>>>> upstream/master
 
       !##################################################
       ! compute the boundary values in x direction
@@ -383,11 +358,7 @@ contains
               ! This should be changed so phi_xminus can be a function of
               ! time and space.
               if (.true.) then
-<<<<<<< HEAD
-                phi_bound=phi(Bs+g-1,:,:)
-=======
                 phi_bound=phi(Bs(1)+g-1,:,:)
->>>>>>> upstream/master
                 phi_bound(:,UxF)  = phi_bound(:,UxF) / phi_bound(:,rhoF)
                 phi_bound(:,UyF)  = phi_bound(:,UyF) / phi_bound(:,rhoF)
                 phi_bound(:,rhoF) = phi_bound(:,rhoF) * phi_bound(:,rhoF)
@@ -398,22 +369,13 @@ contains
                 phi_bound(:,  pF)=params_ns%bound%phi_xplus(  pF)
               endif
               ! compute the ingoing and outgoing characteristics and changes the state vector
-<<<<<<< HEAD
-              call set_bound_open( normal_vector, phi(Bs+g,:,:), phi_bound)
-=======
               call set_bound_open( normal_vector, phi(Bs(1)+g,:,:), phi_bound)
->>>>>>> upstream/master
               ! Because this is a boundary block, which is not synchronized
               ! we have to do something with the ghost nodes of this block.
               ! An easy way to fill them is to use the last availavble point
               ! inside the domain.
-<<<<<<< HEAD
-              do ix = Bs+g+1, Bs+2*g
-                phi(ix,:,:)=phi(Bs+g,:,:)
-=======
               do ix = Bs(1)+g+1, Bs(1)+2*g
                 phi(ix,:,:)=phi(Bs(1)+g,:,:)
->>>>>>> upstream/master
               end do
             endif
 
@@ -467,11 +429,7 @@ contains
             ! This should be changed so phi_xminus can be a function of
             ! time and space.
             if (.true.) then
-<<<<<<< HEAD
-              phi_bound=phi(Bs+g-1,:,:)
-=======
               phi_bound=phi(Bs(1)+g-1,:,:)
->>>>>>> upstream/master
               phi_bound(:,UxF)  = phi_bound(:,UxF) / phi_bound(:,rhoF)
               phi_bound(:,UyF)  = phi_bound(:,UyF) / phi_bound(:,rhoF)
               phi_bound(:,rhoF) = phi_bound(:,rhoF) * phi_bound(:,rhoF)
@@ -482,22 +440,13 @@ contains
               phi_bound(:,  pF)=params_ns%bound%phi_xplus(  pF)
             endif
             ! compute the ingoing and outgoing characteristics and changes the state vector
-<<<<<<< HEAD
-            call set_bound_open( normal_vector, phi(Bs+g,:,:), phi_bound)
-=======
             call set_bound_open( normal_vector, phi(Bs(1)+g,:,:), phi_bound)
->>>>>>> upstream/master
             ! Because this is a boundary block, which is not synchronized
             ! we have to do something with the ghost nodes of this block.
             ! An easy way to fill them is to use the last availavble point
             ! inside the domain.
-<<<<<<< HEAD
-            do ix = Bs+g+1, Bs+2*g
-              phi(ix,:,:)=phi(Bs+g,:,:)
-=======
             do ix = Bs(1)+g+1, Bs(1)+2*g
               phi(ix,:,:)=phi(Bs(1)+g,:,:)
->>>>>>> upstream/master
             end do
           endif
           ! to implement
@@ -539,13 +488,8 @@ contains
 
         select case(params_ns%bound%name(2))
         case("symmetryAxis-wall")
-<<<<<<< HEAD
-            phi(:,Bs+g,UxF) = 0
-            phi(:,Bs+g,UyF) = 0
-=======
             phi(:,Bs(2)+g,UxF) = 0
             phi(:,Bs(2)+g,UyF) = 0
->>>>>>> upstream/master
 
         !  to implement
         !case("open")
@@ -559,13 +503,8 @@ contains
         ! we have to do something with the ghost nodes of this block.
         ! An easy way to fill them is to use the last availavble point
         ! inside the domain.
-<<<<<<< HEAD
-        do iy = Bs+g+1, Bs+2*g
-          phi(:,iy,:)=phi(:,Bs+g,:)
-=======
         do iy = Bs(2)+g+1, Bs(2)+2*g
           phi(:,iy,:)=phi(:,Bs(2)+g,:)
->>>>>>> upstream/master
         end do
       end if
 
@@ -738,12 +677,7 @@ contains
       !
       ! called for each block.
 
-<<<<<<< HEAD
-
-      if (maxval(abs(u))>1.0e16) then
-=======
       if (maxval(abs(u))>1.0e10) then
->>>>>>> upstream/master
         call abort(6661,"ns fail: very very large values in state vector.")
       endif
       ! compute mean density and pressure

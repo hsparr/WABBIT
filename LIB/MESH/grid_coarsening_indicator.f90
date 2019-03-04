@@ -155,10 +155,6 @@ subroutine grid_coarsening_indicator( time, params, lgt_block, hvy_block, hvy_tm
             write (14,'(10(g15.8,1x))') time, norm, params%eps
             close(14)
         endif
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/master
     endif
 
 

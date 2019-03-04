@@ -28,11 +28,7 @@
 ! ********************************************************************************************
 
 subroutine save_data(iteration, time, params, lgt_block, hvy_block, lgt_active, lgt_n, &
-<<<<<<< HEAD
-    hvy_n, hvy_tmp, hvy_active )
-=======
     hvy_n, hvy_tmp, hvy_active, hvy_gridQ)
->>>>>>> upstream/master
 
     !---------------------------------------------------------------------------------------------
     ! modules

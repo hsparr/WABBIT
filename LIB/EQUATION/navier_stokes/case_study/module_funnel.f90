@@ -209,12 +209,8 @@ end subroutine read_params_funnel
 subroutine  draw_funnel(x_0, delta_x, Bs, g, mask, mask_is_colored)
   implicit none
   ! -----------------------------------------------------------------
-<<<<<<< HEAD
-  integer(kind=ik), intent(in)  :: Bs, g        !< grid parameter
-=======
   integer(kind=ik), intent(in)  :: g        !< grid parameter
   integer(kind=ik), dimension(3), intent(in) :: Bs
->>>>>>> upstream/master
   real(kind=rk), intent(in)     :: x_0(3), delta_x(3) !< coordinates of block and block spacinf
   real(kind=rk), intent(inout)  :: mask(:,:,:)    !< mask function
   logical, optional, intent(in) :: mask_is_colored

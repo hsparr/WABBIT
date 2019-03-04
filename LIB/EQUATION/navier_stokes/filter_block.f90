@@ -530,13 +530,8 @@ subroutine bogey_filter2D_(filter, u, g, Bs, N_dF, xx0, ddx, work_array)
 
   ! copy the non filtert data work_array to block_old
   do dF=1,N_dF
-<<<<<<< HEAD
-      do iy = 1, Bs+2*g, 1
-         do ix = 1, Bs+2*g, 1
-=======
       do iy = 1, Bs(2)+2*g, 1
          do ix = 1, Bs(1)+2*g, 1
->>>>>>> upstream/master
               block_old(ix,iy,1,df) = work_array(ix,iy,1,dF)
           end do
       end do

@@ -93,9 +93,15 @@ subroutine compute_vorticity_post(params)
     params%Bs = Bs
     allocate(params%butcher_tableau(1,1))
 <<<<<<< HEAD
+<<<<<<< HEAD
     ! only (4* , for safety) lgt_n/number_procs blocks necessary (since we do not want to refine)
     !> \todo change that for 3d case
     params%number_blocks = 2_ik*lgt_n/params%number_procs
+=======
+    ! no refinement is made in this postprocessing tool; we therefore allocate about
+    ! the number of blocks in the file (and not much more than that)
+    params%number_blocks = ceiling(  real(lgt_n)/real(params%number_procs) )
+>>>>>>> upstream/master
 =======
     ! no refinement is made in this postprocessing tool; we therefore allocate about
     ! the number of blocks in the file (and not much more than that)
@@ -131,7 +137,11 @@ subroutine compute_vorticity_post(params)
 
         if (operator == "--vorticity" .or. operator == "--vor-abs") then
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (params%threeD_case) then
+=======
+            if (params%dim == 3) then
+>>>>>>> upstream/master
 =======
             if (params%dim == 3) then
 >>>>>>> upstream/master
@@ -180,7 +190,11 @@ subroutine compute_vorticity_post(params)
     elseif (operator == "--vor-abs") then
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (.not. params%threeD_case) then
+=======
+        if (.not. params%dim == 3) then
+>>>>>>> upstream/master
 =======
         if (.not. params%dim == 3) then
 >>>>>>> upstream/master
