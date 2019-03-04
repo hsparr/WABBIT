@@ -34,7 +34,12 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
 
     implicit none
     !--------------------------------------------------------
+<<<<<<< HEAD
     integer(kind=ik), intent(in)            :: g, Bs         !< # ghost and bulk points
+=======
+    integer(kind=ik), intent(in)            :: g       !< # ghost and bulk points
+    integer(kind=ik), dimension(3), intent(in) :: Bs
+>>>>>>> upstream/master
     real(kind=rk), dimension(2), intent(in) :: x0, dx        !< grid coordinates
     real(kind=rk), intent(inout)               :: phi(:, :, :)  !< statevector
     real(kind=rk), intent(inout)            :: rhs(:, :, :)  !< rhs array
@@ -52,6 +57,7 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
     real(kind=rk)     :: dr, dz ! lattice spacing cylinder coordinates
     logical           :: dissipation
     ! variables
+<<<<<<< HEAD
     real(kind=rk)  :: rho(Bs+2*g, Bs+2*g), u(Bs+2*g, Bs+2*g), v(Bs+2*g, Bs+2*g), p(Bs+2*g, Bs+2*g), &
                    T(Bs+2*g, Bs+2*g), mu(Bs+2*g, Bs+2*g), mu_d(Bs+2*g, Bs+2*g), lambda(Bs+2*g, Bs+2*g), &
                    fric_p(Bs+2*g, Bs+2*g), fric_u(Bs+2*g, Bs+2*g), fric_v(Bs+2*g, Bs+2*g), &
@@ -69,6 +75,25 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
     ! tmp1 field
     real(kind=rk)       :: tmp1(Bs+2*g, Bs+2*g)
     integer(kind=ik)    :: ir, iz
+=======
+    real(kind=rk)  :: rho(Bs(1)+2*g, Bs(2)+2*g), u(Bs(1)+2*g, Bs(2)+2*g), v(Bs(1)+2*g, Bs(2)+2*g), p(Bs(1)+2*g, Bs(2)+2*g), &
+                   T(Bs(1)+2*g, Bs(2)+2*g), mu(Bs(1)+2*g, Bs(2)+2*g), mu_d(Bs(1)+2*g, Bs(2)+2*g), lambda(Bs(1)+2*g, Bs(2)+2*g), &
+                   fric_p(Bs(1)+2*g, Bs(2)+2*g), fric_u(Bs(1)+2*g, Bs(2)+2*g), fric_v(Bs(1)+2*g, Bs(2)+2*g), &
+                   lambdaT_r(Bs(1)+2*g, Bs(2)+2*g), lambdaT_z(Bs(1)+2*g, Bs(2)+2*g), &
+                   tau_rr(Bs(1)+2*g, Bs(2)+2*g), tau_zz(Bs(1)+2*g, Bs(2)+2*g), &
+                   tau_tt(Bs(1)+2*g, Bs(2)+2*g), tau_rz(Bs(1)+2*g, Bs(2)+2*g), &
+                   heat_flux_r(Bs(1)+2*g, Bs(2)+2*g), heat_flux_z(Bs(1)+2*g, Bs(2)+2*g)
+    ! derivatives
+    real(kind=rk)  :: rho_v(Bs(1)+2*g, Bs(2)+2*g), rho_u(Bs(1)+2*g, Bs(2)+2*g), &
+                   u_z(Bs(1)+2*g, Bs(2)+2*g), u_r(Bs(1)+2*g, Bs(2)+2*g), &
+                   v_z(Bs(1)+2*g, Bs(2)+2*g), v_r(Bs(1)+2*g, Bs(2)+2*g), &
+                   p_r(Bs(1)+2*g, Bs(2)+2*g), p_z(Bs(1)+2*g, Bs(2)+2*g), sqrt_rho_inv(Bs(1)+2*g, Bs(2)+2*g)
+
+    real(kind=rk)  :: r(Bs(1)+2*g,Bs(2)+2*g), r_inv(Bs(1)+2*g, Bs(2)+2*g), r0
+    ! tmp1 field
+    real(kind=rk)       :: tmp1(Bs(1)+2*g, Bs(2)+2*g)
+    integer(kind=ik)    :: ir,ix
+>>>>>>> upstream/master
     !----------------------------------------------------------
 
     ! pysical constants
@@ -86,6 +111,7 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
     r0 = x0(2) + params_ns%R_min
 
     ! preperation of physical fields and arrays
+<<<<<<< HEAD
     do ir = 1, Bs+2*g  ! index of radial component
         do iz = 1, Bs+2*g  ! index of axial component
             r(iz,ir)     = dble(ir-(g+1)) * dr + r0
@@ -97,6 +123,19 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
             p(iz,ir)         = phi(iz,ir,pF)
             rho_v(iz,ir)     = rho(iz,ir)*v(iz,ir)
             rho_u(iz,ir)     = rho(iz,ir)*u(iz,ir)
+=======
+    do ir = 1, Bs(2)+2*g  ! index of radial component
+        do ix = 1, Bs(1)+2*g  ! index of axial component
+            r(ix,ir)     = dble(ir-(g+1)) * dr + r0
+            r_inv(ix,ir) = 1.0_rk/r(ix,ir)
+            rho(ix,ir)       = phi(ix,ir,rhoF) * phi(ix,ir,rhoF)
+            sqrt_rho_inv(ix,ir)  = 1.0_rk / phi(ix,ir,rhoF)
+            u(ix,ir)         = phi(ix,ir,UyF) * sqrt_rho_inv(ix,ir)
+            v(ix,ir)         = phi(ix,ir,UxF) * sqrt_rho_inv(ix,ir)
+            p(ix,ir)         = phi(ix,ir,pF)
+            rho_v(ix,ir)     = rho(ix,ir)*v(ix,ir)
+            rho_u(ix,ir)     = rho(ix,ir)*u(ix,ir)
+>>>>>>> upstream/master
         end do
     end do
 
@@ -203,16 +242,26 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
 
         !> Derivative in the radial direction
         subroutine  D_r( q, dqdr)
+<<<<<<< HEAD
             real(kind=rk), intent(in)       :: q(Bs+2*g, Bs+2*g)
             real(kind=rk), intent(out)      :: dqdr(Bs+2*g, Bs+2*g)
+=======
+            real(kind=rk), intent(in)       :: q(Bs(1)+2*g, Bs(2)+2*g)
+            real(kind=rk), intent(out)      :: dqdr(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
             !> \details Note Bs, g, dz, boundary_flag are defined in the supfunction!
             call diffy( Bs, g, dr, q, dqdr, boundary_flag(2))
         end subroutine D_r
 
         !> Derivative in the axial direction
         subroutine  D_z( q, dqdz)
+<<<<<<< HEAD
             real(kind=rk), intent(in)       :: q(Bs+2*g, Bs+2*g)
             real(kind=rk), intent(out)      :: dqdz(Bs+2*g, Bs+2*g)
+=======
+            real(kind=rk), intent(in)       :: q(Bs(1)+2*g, Bs(2)+2*g)
+            real(kind=rk), intent(out)      :: dqdz(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
             !> \details Note Bs, g, dz, boundary_flag are defined in the supfunction!
             call diffx( Bs, g, dz, q, dqdz, boundary_flag(1))
         end subroutine D_z
@@ -253,11 +302,19 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
 
               select case(params_ns%bound%name(2))
               case("symmetryAxis-wall")
+<<<<<<< HEAD
                   rhs(:, Bs+g, UxF) = 0
                   rhs(:, Bs+g, UyF) = 0
                   rhs(:, Bs+g, pF)  = rhs(:, Bs+g, pF) - heat_flux_r(:, Bs+g )*(gamma_ - 1.0_rk)
                   phi(:, Bs+g, UxF) = 0
                   phi(:, Bs+g, UyF) = 0
+=======
+                  rhs(:, Bs(2)+g, UxF) = 0
+                  rhs(:, Bs(2)+g, UyF) = 0
+                  rhs(:, Bs(2)+g, pF)  = rhs(:, Bs(2)+g, pF) - heat_flux_r(:, Bs(2)+g )*(gamma_ - 1.0_rk)
+                  phi(:, Bs(2)+g, UxF) = 0
+                  phi(:, Bs(2)+g, UyF) = 0
+>>>>>>> upstream/master
               case default
                   call abort(81020164,"OHHHH no, Unknown Boundary Condition: "// params_ns%bound%name(1))
               end select
@@ -265,8 +322,13 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
               ! we have to do something with the ghost nodes of this block.
               ! An easy way to fill them is to use the last availavble point
               ! inside the domain.
+<<<<<<< HEAD
                do ir = Bs+g+1, Bs+2*g
                    phi(:,ir,:)=phi(:,Bs+g,:)
+=======
+               do ir = Bs(2)+g+1, Bs(2)+2*g
+                   phi(:,ir,:)=phi(:,Bs(2)+g,:)
+>>>>>>> upstream/master
                end do
           end if
         end subroutine
@@ -274,6 +336,7 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
 
         !> Inline function adds penalization terms to RHS
         subroutine set_penalization()
+<<<<<<< HEAD
             integer(kind=ik) :: n_eqn
             real(kind=rk), allocatable, save :: phi_prime(:, :, :), phi_ref(:,:,:), mask(:,:,:)
             logical ,save :: allocated_penal_fields=.false.
@@ -285,6 +348,19 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
               allocate( mask(Bs+2*g,Bs+2*g,n_eqn), &
                         phi_prime(Bs+2*g,Bs+2*g,n_eqn),&
                         phi_ref(Bs+2*g,Bs+2*g,n_eqn))
+=======
+            integer(kind=ik) :: ir, ix, n_eqn
+            real(kind=rk), allocatable, save :: phi_prime(:, :, :), phi_ref(:,:,:), mask(:,:,:)
+            logical ,save :: allocated_penal_fields=.false.
+
+            if (.not. allocated_penal_fields) then
+              allocated_penal_fields=.true.
+              n_eqn=params_ns%n_eqn
+              allocate( mask(Bs(1)+2*g,Bs(2)+2*g,n_eqn), &
+                        phi_prime(Bs(1)+2*g,Bs(2)+2*g,n_eqn),&
+                        phi_ref(Bs(1)+2*g,Bs(2)+2*g,n_eqn))
+
+>>>>>>> upstream/master
             endif
             phi_prime(:, :, rhoF)= rho
             phi_prime(:, :, UxF )= u
@@ -292,6 +368,7 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
             phi_prime(:, :, pF  )= p
 
             call compute_mask_and_ref2D(params_ns, Bs, g, x0, dx, phi_prime, mask, phi_ref)
+<<<<<<< HEAD
             do ir = g+1, Bs+g
               do iz = g+1, Bs+g
                 ! density
@@ -302,6 +379,18 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
                 rhs(iz, ir, UyF)=rhs(iz, ir, UyF) -1.0_rk*sqrt_rho_inv(iz, ir)*mask(iz, ir, UyF)*(rho_u(iz, ir)-Phi_ref(iz, ir, UyF) )
                 ! pressure
                 rhs(iz, ir, pF)=rhs(iz, ir, pF)                        -mask(iz, ir, pF)*(p(iz, ir)-Phi_ref(iz, ir, pF) )
+=======
+            do ir = g+1, Bs(2)+g
+              do ix = g+1, Bs(1)+g
+                ! density
+                rhs(ix, ir, rhoF)=rhs(ix, ir, rhoF) -0.5_rk*sqrt_rho_inv(ix, ir)*mask(ix, ir, rhoF)*(rho(ix, ir)-Phi_ref(ix, ir, rhoF) )
+                ! x-velocity
+                rhs(ix, ir, UxF)=rhs(ix, ir, UxF) -1.0_rk*sqrt_rho_inv(ix, ir)*mask(ix, ir, UxF)*(rho_v(ix, ir)-Phi_ref(ix, ir, UxF) )
+                ! y-velocity
+                rhs(ix, ir, UyF)=rhs(ix, ir, UyF) -1.0_rk*sqrt_rho_inv(ix, ir)*mask(ix, ir, UyF)*(rho_u(ix, ir)-Phi_ref(ix, ir, UyF) )
+                ! pressure
+                rhs(ix, ir, pF)=rhs(ix, ir, pF)                        -mask(ix, ir, pF)*(p(ix, ir)-Phi_ref(ix, ir, pF) )
+>>>>>>> upstream/master
               end do
             end do
 

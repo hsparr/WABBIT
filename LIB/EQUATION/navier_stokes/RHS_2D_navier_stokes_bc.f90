@@ -37,7 +37,12 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     implicit none
 
     !> grid parameter
+<<<<<<< HEAD
     integer(kind=ik), intent(in)                            :: g, Bs
+=======
+    integer(kind=ik), intent(in)                            :: g
+    integer(kind=ik), dimension(3), intent(in) :: Bs
+>>>>>>> upstream/master
     !> origin and spacing of the block
     real(kind=rk), dimension(2), intent(in)                 :: x0, delta_x
     !> datafields
@@ -72,6 +77,7 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     real(kind=rk)                                           :: dx, dy
 
     ! variables
+<<<<<<< HEAD
     real(kind=rk)                                           :: rho(Bs+2*g, Bs+2*g), u(Bs+2*g, Bs+2*g), v(Bs+2*g, Bs+2*g), p(Bs+2*g, Bs+2*g), T(Bs+2*g, Bs+2*g), &
                                                                tau11(Bs+2*g, Bs+2*g), tau22(Bs+2*g, Bs+2*g), tau33(Bs+2*g, Bs+2*g), tau12(Bs+2*g, Bs+2*g)
     ! dummy field
@@ -80,6 +86,16 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
 
     ! inverse sqrt(rho) field
     real(kind=rk)                                           :: phi1_inv(Bs+2*g, Bs+2*g)
+=======
+    real(kind=rk) :: rho(Bs(1)+2*g, Bs(2)+2*g), u(Bs(1)+2*g, Bs(2)+2*g), v(Bs(1)+2*g, Bs(2)+2*g), p(Bs(1)+2*g, Bs(2)+2*g), T(Bs(1)+2*g, Bs(2)+2*g), &
+                      tau11(Bs(1)+2*g, Bs(2)+2*g), tau22(Bs(1)+2*g, Bs(2)+2*g), tau33(Bs(1)+2*g, Bs(2)+2*g), tau12(Bs(1)+2*g, Bs(2)+2*g)
+    ! dummy field
+    real(kind=rk) :: dummy(Bs(1)+2*g, Bs(2)+2*g), dummy2(Bs(1)+2*g, Bs(2)+2*g), dummy3(Bs(1)+2*g, Bs(2)+2*g), dummy4(Bs(1)+2*g, Bs(2)+2*g)
+
+
+    ! inverse sqrt(rho) field
+    real(kind=rk)                                           :: phi1_inv(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
 
     ! loop variables
     integer(kind=ik)                                        :: i, j,n_eqn
@@ -111,8 +127,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     dummy3=0
     dummy4=0
     ! primitive variables
+<<<<<<< HEAD
     do j = 1, Bs+2*g
         do i = 1, Bs+2*g
+=======
+    do j = 1, Bs(2)+2*g
+        do i = 1, Bs(1)+2*g
+>>>>>>> upstream/master
             rho(i,j)       = phi(i,j,1) * phi(i,j,1)
             phi1_inv(i,j)  = 1.0_rk / phi(i,j,1)
             u(i,j)         = phi(i,j,2) * phi1_inv(i,j)
@@ -123,8 +144,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
 
     ! Compute mu and T
     if (dissipation) then
+<<<<<<< HEAD
         do j = 1, Bs+2*g
             do i = 1, Bs+2*g
+=======
+        do j = 1, Bs(2)+2*g
+            do i = 1, Bs(1)+2*g
+>>>>>>> upstream/master
                 T(i,j) = p(i,j) * phi1_inv(i,j) * phi1_inv(i,j) * Rs_inv
             end do
         end do
@@ -146,8 +172,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     !---------------------------------------------------------------------------------------------
     call diffxy( Bs, g, dx, dy, u, dummy, dummy2,boundary_flag)
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,2) = - 0.5_rk * rho(i,j) * ( u(i,j) * dummy(i,j) + v(i,j) * dummy2(i,j))
         end do
     end do
@@ -165,8 +196,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     !---------------------------------------------------------------------------------------------
     call diffxy( Bs, g, dx, dy, v, dummy, dummy2,boundary_flag)
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,3) = - 0.5_rk * rho(i,j) * ( u(i,j) * dummy(i,j) + v(i,j) * dummy2(i,j))
         end do
     end do
@@ -184,8 +220,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     !---------------------------------------------------------------------------------------------
     call diffxy( Bs, g, dx, dy, p, dummy, dummy2,boundary_flag)
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,2) = rhs(i,j,2) - dummy(i,j)
             rhs(i,j,3) = rhs(i,j,3) - dummy2(i,j)
             rhs(i,j,4) = (gamma_ - 1.0_rk) * ( u(i,j) * dummy(i,j) + v(i,j) * dummy2(i,j) )
@@ -200,8 +241,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         !---------------------------------------------------------------------------------------------
         call diffx( Bs, g, dx, tau11, dummy,boundary_flag(1))
 
+<<<<<<< HEAD
         do j = g+1, Bs+g
             do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+            do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
                 rhs(i,j,2) = rhs(i,j,2) + dummy(i,j)
                 rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j)
             end do
@@ -211,8 +257,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         !---------------------------------------------------------------------------------------------
         call diffy( Bs, g, dy, tau12, dummy, boundary_flag(2))
 
+<<<<<<< HEAD
         do j = g+1, Bs+g
             do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+            do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
                 rhs(i,j,2) = rhs(i,j,2) + dummy(i,j)
                 rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * u(i,j) * dummy(i,j)
             end do
@@ -222,8 +273,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         !---------------------------------------------------------------------------------------------
         call diffx( Bs, g, dx, tau12, dummy, boundary_flag(1))
 
+<<<<<<< HEAD
         do j = g+1, Bs+g
             do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+            do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
                 rhs(i,j,3) = rhs(i,j,3) + dummy(i,j)
                 rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * v(i,j) * dummy(i,j)
             end do
@@ -233,8 +289,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         !---------------------------------------------------------------------------------------------
         call diffy( Bs, g, dy, tau22, dummy, boundary_flag(2))
 
+<<<<<<< HEAD
         do j = g+1, Bs+g
             do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+            do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
                 rhs(i,j,3) = rhs(i,j,3) + dummy(i,j)
                 rhs(i,j,4) = rhs(i,j,4) - ( gamma_ - 1.0_rk ) * v(i,j) * dummy(i,j)
             end do
@@ -244,8 +305,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         ! Heat Flux
         call diffxy( Bs, g, dx, dy, T, dummy, dummy2, boundary_flag)
 
+<<<<<<< HEAD
         do j = g-1, Bs+g+2
             do i = g-1, Bs+g+2
+=======
+        do j = g-1, Bs(2)+g+2
+            do i = g-1, Bs(1)+g+2
+>>>>>>> upstream/master
                 dummy3(i,j)  = u(i,j)*tau11(i,j) + v(i,j)*tau12(i,j) + lambda * dummy(i,j)
                 dummy4(i,j) = u(i,j)*tau12(i,j) + v(i,j)*tau22(i,j) + lambda * dummy2(i,j)
             end do
@@ -253,8 +319,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         call diffx( Bs, g, dx, dummy3, dummy, boundary_flag(1))
         call diffy( Bs, g, dy, dummy4, dummy2, boundary_flag(2))
 
+<<<<<<< HEAD
         do j = g+1, Bs+g
             do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+            do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
                 rhs(i,j,4) = rhs(i,j,4) + ( gamma_ - 1.0_rk ) * ( dummy(i,j) + dummy2(i,j) )
             end do
         end do
@@ -264,8 +335,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     ! EQUATIONS
     ! --------------------------------------------------------------------------------------------------------------
     ! RHS of equation of mass: J*srho*2 * srho_t = -div(rho*U_tilde)
+<<<<<<< HEAD
     do j = g-1, Bs+g+2
         do i = g-1, Bs+g+2
+=======
+    do j = g-1, Bs(2)+g+2
+        do i = g-1, Bs(1)+g+2
+>>>>>>> upstream/master
             dummy(i,j)  = rho(i,j)*u(i,j)
             dummy2(i,j) = rho(i,j)*v(i,j)
         end do
@@ -273,15 +349,25 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     call diffx( Bs, g, dx, dummy,  dummy3, boundary_flag(1))
     call diffy( Bs, g, dy, dummy2, dummy4, boundary_flag(2))
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,1) = (-dummy3(i,j) - dummy4(i,j)) * 0.5_rk * phi1_inv(i,j)
         end do
     end do
 
     ! RHS of  momentum equation for u: sru_t = -1/2 * div(rho U_tilde u ) - 1/2 * (rho*U_tilde)*Du - Dp
+<<<<<<< HEAD
     do j = g-1, Bs+g+2
         do i = g-1, Bs+g+2
+=======
+    do j = g-1, Bs(2)+g+2
+        do i = g-1, Bs(1)+g+2
+>>>>>>> upstream/master
             dummy(i,j)  = u(i,j)*rho(i,j)*u(i,j)
             dummy2(i,j) = v(i,j)*rho(i,j)*u(i,j)
         end do
@@ -289,15 +375,25 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     call diffx( Bs, g, dx, dummy,  dummy3, boundary_flag(1))
     call diffy( Bs, g, dy, dummy2, dummy4, boundary_flag(2))
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,2) = ( rhs(i,j,2) - 0.5_rk * ( dummy3(i,j) + dummy4(i,j) ) ) * phi1_inv(i,j)
         end do
     end do
 
     ! RHS of  momentum equation for v
+<<<<<<< HEAD
     do j = g-1, Bs+g+2
         do i = g-1, Bs+g+2
+=======
+    do j = g-1, Bs(2)+g+2
+        do i = g-1, Bs(1)+g+2
+>>>>>>> upstream/master
             dummy(i,j)  = u(i,j)*rho(i,j)*v(i,j)
             dummy2(i,j) = v(i,j)*rho(i,j)*v(i,j)
         end do
@@ -305,15 +401,25 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     call diffx( Bs, g, dx, dummy,  dummy3, boundary_flag(1))
     call diffy( Bs, g, dy, dummy2, dummy4, boundary_flag(2))
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,3) = ( rhs(i,j,3) - 0.5_rk * ( dummy3(i,j) + dummy4(i,j) ) ) * phi1_inv(i,j)
         end do
     end do
 
     ! RHS of energy equation:  p_t = -gamma*div(U_tilde p) + gamm1 *U x grad(p)
+<<<<<<< HEAD
     do j = g-1, Bs+g+2
         do i = g-1, Bs+g+2
+=======
+    do j = g-1, Bs(2)+g+2
+        do i = g-1, Bs(1)+g+2
+>>>>>>> upstream/master
             dummy(i,j)  = u(i,j)*p(i,j)
             dummy2(i,j) = v(i,j)*p(i,j)
         end do
@@ -321,8 +427,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
     call diffx( Bs, g, dx, dummy,  dummy3, boundary_flag(1))
     call diffy( Bs, g, dy, dummy2, dummy4, boundary_flag(2))
 
+<<<<<<< HEAD
     do j = g+1, Bs+g
         do i = g+1, Bs+g
+=======
+    do j = g+1, Bs(2)+g
+        do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             rhs(i,j,4) = rhs(i,j,4) - gamma_ * ( dummy3(i,j) + dummy4(i,j) )
         end do
     end do
@@ -332,9 +443,15 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         if (.not. allocated_penal_fields) then
           allocated_penal_fields=.true.
           n_eqn=params_ns%n_eqn
+<<<<<<< HEAD
           allocate( mask(Bs+2*g,Bs+2*g,n_eqn), &
                     phi_prime(Bs+2*g,Bs+2*g,n_eqn),&
                     phi_ref(Bs+2*g,Bs+2*g,n_eqn))
+=======
+          allocate( mask(Bs(1)+2*g,Bs(2)+2*g,n_eqn), &
+                    phi_prime(Bs(1)+2*g,Bs(2)+2*g,n_eqn),&
+                    phi_ref(Bs(1)+2*g,Bs(2)+2*g,n_eqn))
+>>>>>>> upstream/master
         endif
         phi_prime(:,:,rhoF)= rho
         phi_prime(:,:,UxF )= u
@@ -342,8 +459,13 @@ subroutine RHS_2D_navier_stokes_BC( g, Bs, x0, delta_x, phi, rhs, boundary_flag)
         phi_prime(:,:,pF  )= p
 
         call compute_mask_and_ref2D(params_ns, Bs, g, x0, delta_x, phi_prime, mask, phi_ref)
+<<<<<<< HEAD
         do j = g+1, Bs+g
           do i = g+1, Bs+g
+=======
+        do j = g+1, Bs(2)+g
+          do i = g+1, Bs(1)+g
+>>>>>>> upstream/master
             ! density
             rhs(i,j,rhoF)=rhs(i,j,rhoF) -0.5_rk*phi1_inv(i,j)*mask(i,j,rhoF)*(rho(i,j)-  Phi_ref(i,j,rhoF) )
             ! x-velocity
@@ -364,6 +486,7 @@ end subroutine RHS_2D_navier_stokes_BC
 !---------------------------------------------------------------------------------------------
 !---------------------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 subroutine  diffxy( Bs, g, dx, dy, u, dudx, dudy, boundary_flag)
 
     integer(kind=ik), intent(in)    :: g, Bs
@@ -371,6 +494,15 @@ subroutine  diffxy( Bs, g, dx, dy, u, dudx, dudy, boundary_flag)
     real(kind=rk), intent(in)       :: dx, dy
     real(kind=rk), intent(in)       :: u(Bs+2*g, Bs+2*g)
     real(kind=rk), intent(out)      :: dudx(Bs+2*g, Bs+2*g), dudy(Bs+2*g, Bs+2*g)
+=======
+subroutine  diffxy(Bs, g, dx, dy, u, dudx, dudy,boundary_flag)
+    integer(kind=ik), intent(in)    :: g
+    integer(kind=ik), dimension(3), intent(in) :: Bs
+    integer(kind=2), intent(in)     :: boundary_flag(3)
+    real(kind=rk), intent(in)       :: dx, dy
+    real(kind=rk), intent(in)       :: u(Bs(1)+2*g, Bs(2)+2*g)
+    real(kind=rk), intent(out)      :: dudx(Bs(1)+2*g, Bs(2)+2*g), dudy(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
 
     integer                         :: i, j
     real(kind=rk)                   :: dx_inv, dy_inv
@@ -399,12 +531,21 @@ subroutine  diffxy( Bs, g, dx, dy, u, dudx, dudy, boundary_flag)
 end subroutine diffxy
 
 subroutine  diffx( Bs, g, dx, u, dudx,boundary_flag)
+<<<<<<< HEAD
 
     integer(kind=ik), intent(in)    :: g, Bs
     integer(kind=2), intent(in)     :: boundary_flag
     real(kind=rk), intent(in)       :: dx
     real(kind=rk), intent(in)       :: u(Bs+2*g, Bs+2*g)
     real(kind=rk), intent(out)      :: dudx(Bs+2*g, Bs+2*g)
+=======
+    integer(kind=ik), intent(in)    :: g
+    integer(kind=ik), dimension(3), intent(in) :: Bs
+    integer(kind=2), intent(in)     :: boundary_flag
+    real(kind=rk), intent(in)       :: dx
+    real(kind=rk), intent(in)       :: u(Bs(1)+2*g, Bs(2)+2*g)
+    real(kind=rk), intent(out)      :: dudx(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
 
     integer                         :: i, j
     real(kind=rk)                   :: dx_inv
@@ -428,11 +569,20 @@ end subroutine diffx
 
 subroutine  diffy( Bs, g, dy, u, dudy, boundary_flag)
 
+<<<<<<< HEAD
     integer(kind=ik), intent(in)    :: g, Bs
     integer(kind=2), intent(in)     :: boundary_flag
     real(kind=rk), intent(in)       :: dy
     real(kind=rk), intent(in)       :: u(Bs+2*g, Bs+2*g)
     real(kind=rk), intent(out)      :: dudy(Bs+2*g, Bs+2*g)
+=======
+    integer(kind=ik), intent(in)    :: g
+    integer(kind=ik), dimension(3), intent(in) :: Bs
+    integer(kind=2), intent(in)     :: boundary_flag
+    real(kind=rk), intent(in)       :: dy
+    real(kind=rk), intent(in)       :: u(Bs(1)+2*g, Bs(2)+2*g)
+    real(kind=rk), intent(out)      :: dudy(Bs(1)+2*g, Bs(2)+2*g)
+>>>>>>> upstream/master
 
     integer                         :: i, j
     real(kind=rk)                   :: dy_inv

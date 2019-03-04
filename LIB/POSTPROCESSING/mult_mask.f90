@@ -14,7 +14,8 @@ subroutine mult_mask(params)
     type (type_params), intent(inout)  :: params
     character(len=80)      :: fname_input, fname_mask, fname_result
     real(kind=rk)          :: time
-    integer(kind=ik)       :: iteration, k, lgt_id, lgt_n, hvy_n, Bs, tc_length, g
+    integer(kind=ik)       :: iteration, k, lgt_id, lgt_n, hvy_n, tc_length, g
+    integer(kind=ik), dimension(3) :: Bs
     character(len=2)       :: order
 
     integer(kind=ik), allocatable      :: lgt_block(:, :)
@@ -62,11 +63,6 @@ subroutine mult_mask(params)
         write(*,*) "------------------------------------------------------------------"
     endif
 
-    if (params%dim==3) then
-        params%threeD_case = .true.
-    else
-        params%threeD_case = .false.
-    end if
 
     params%max_treelevel = tc_length
     params%n_eqn = 2

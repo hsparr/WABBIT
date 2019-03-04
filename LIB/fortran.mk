@@ -1,4 +1,9 @@
-<<<<<<< HEAD
+##################################################################
+##################################################################
+#		MAKEFILE - Fortran Routines
+##################################################################
+#################################################################
+
 # Makefile for WABBIT code, adapted from pseudospectators/FLUSI and pseudospectators/UP2D
 # Non-module Fortran files to be compiled:
 FFILES = treecode_size.f90 array_compare.f90 \
@@ -18,7 +23,7 @@ MFILES = module_precision.f90 module_globals.f90 module_params.f90 module_timing
 	module_physics_metamodule.f90 module_ACM.f90 module_ConvDiff_new.f90 module_bridge_interface.f90 \
 	module_bridge.f90 module_navier_stokes_params.f90 module_helpers.f90 module_insects_integration_flusi_wabbit.f90 \
 	module_insects.f90 module_boundary_conditions.f90 module_funnel.f90 module_navier_stokes_cases.f90\
-	module_simple_geometry.f90 module_shock.f90 module_pipe_flow.f90 module_sparse_operators.f90 module_skimmer.f90 module_guderley_problem.f90
+	module_simple_geometry.f90 module_shock.f90 module_pipe_flow.f90 module_sparse_operators.f90
 MOBJS := $(MFILES:%.f90=$(OBJDIR)/%.o)
 
 # Source code directories (colon-separated):
@@ -36,8 +41,9 @@ endif
 
 
 #Place of Sparse BLAS objects
-SB_LIB = -L../Lib/sblas/SOFTWARE -lSparseBLAS_GNU
-SB_INCL =-I../Lib/sblas/SOFTWARE
+SB_LIB = #-L../../sblas/SOFTWARE -lSparseBLAS_GNU
+#Place of Sparse BLAS modules
+SB_INCL = #-I../../sblas/SOFTWARE
 #-------------------------------------------------------------------------------
 # PRAGMAS part.
 #-------------------------------------------------------------------------------
@@ -74,7 +80,7 @@ LDFLAGS += $(HDF5_FLAGS) -L$(HDF_LIB) -L$(HDF_LIB)64 $(SB_LIB) -lhdf5_fortran -l
 FFLAGS += -I$(HDF_INC) $(SB_INCL)
 # for GNU/gfortran, use -D for example: "PRAGMAS=-DTEST" will turn "#ifdef TEST" to true in the code
 # different pragmas are space-separated
-PRAGMAS = -DSBLAS #-DBLOCKINGSENDRECV
+PRAGMAS = #-DSBLAS #-DBLOCKINGSENDRECV
 endif
 
 #-------------------------------------------------------------------------------
@@ -119,7 +125,7 @@ PRAGMAS = -WF,-DBLOCKINGSENDRECV
 endif
 
 # add the PRAGMAS to FFLAGS: (for all compilers)
-FFLAGS += $(PPFLAG) $(PRAGMAS)
+FFLAGS += $(PPFLAG) $(PRAGMAS) -fPIC
 
 
 # Both programs are compiled by default.
@@ -185,27 +191,19 @@ $(OBJDIR)/module_funnel.o: module_funnel.f90 $(OBJDIR)/module_precision.o $(OBJD
 	funnel2D.f90 funnel3D.f90
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
-$(OBJDIR)/module_skimmer.o: module_skimmer.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o \
-	skimmer2D.f90 
-	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
-
 $(OBJDIR)/module_pipe_flow.o: module_pipe_flow.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
-	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
-
-$(OBJDIR)/module_guderley_problem.o: module_guderley_problem.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_simple_geometry.o: module_simple_geometry.f90 $(OBJDIR)/module_precision.o $(OBJDIR)/module_ns_penalization.o
 		$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_navier_stokes_cases.o: module_navier_stokes_cases.f90 $(OBJDIR)/module_funnel.o $(OBJDIR)/module_ns_penalization.o\
-	$(OBJDIR)/module_shock.o $(OBJDIR)/module_simple_geometry.o $(OBJDIR)/module_pipe_flow.o $(OBJDIR)/module_guderley_problem.o\
-        $(OBJDIR)/module_skimmer.o
+	$(OBJDIR)/module_shock.o $(OBJDIR)/module_simple_geometry.o $(OBJDIR)/module_pipe_flow.o
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_navier_stokes.o: module_navier_stokes.f90 $(OBJDIR)/module_ns_penalization.o\
 	$(OBJDIR)/module_navier_stokes_params.o $(OBJDIR)/module_sparse_operators.o \
-	$(OBJDIR)/module_navier_stokes_cases.o $(OBJDIR)/module_funnel.o $(OBJDIR)/module_skimmer.o RHS_2D_navier_stokes_periodic.f90\
+	$(OBJDIR)/module_navier_stokes_cases.o $(OBJDIR)/module_funnel.o RHS_2D_navier_stokes_periodic.f90\
 	RHS_2D_navier_stokes_bc.f90 RHS_3D_navier_stokes.f90 RHS_2D_cylinder.f90 inicond_NStokes.f90 save_data_ns.f90
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
@@ -240,7 +238,7 @@ $(OBJDIR)/module_hdf5_wrapper.o: module_hdf5_wrapper.f90 $(OBJDIR)/module_params
 
 $(OBJDIR)/module_initialization.o: module_initialization.f90 $(OBJDIR)/module_params.o $(OBJDIR)/module_timing.o \
 	$(OBJDIR)/module_mesh.o $(OBJDIR)/module_IO.o $(OBJDIR)/module_physics_metamodule.o \
-	set_initial_grid.f90 new_block_heavy.f90 \
+	set_initial_grid.f90 \
 	set_inicond_blocks.f90 get_inicond_from_file.f90
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
@@ -263,7 +261,7 @@ $(OBJDIR)/module_helpers.o: module_helpers.f90 $(OBJDIR)/module_globals.o most_c
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 $(OBJDIR)/module_mesh.o: module_mesh.f90 $(OBJDIR)/module_params.o $(OBJDIR)/module_timing.o $(OBJDIR)/module_interpolation.o \
-	$(OBJDIR)/module_mpi.o $(OBJDIR)/module_treelib.o $(OBJDIR)/module_indicators.o \
+	$(OBJDIR)/module_mpi.o $(OBJDIR)/module_treelib.o $(OBJDIR)/module_indicators.o $(OBJDIR)/module_physics_metamodule.o \
 	$(OBJDIR)/module_boundary_conditions.o $(OBJDIR)/module_helpers.o update_neighbors_2D.f90 find_neighbor_edge_2D.f90 does_block_exist.f90 \
 	find_neighbor_corner_2D.f90 refine_mesh.f90 respect_min_max_treelevel.f90 refinement_execute_2D.f90 adapt_mesh.f90 threshold_block.f90 \
 	ensure_gradedness.f90 ensure_completeness.f90 coarse_mesh.f90 balance_load.f90 set_desired_num_blocks_per_rank.f90 \
@@ -302,79 +300,6 @@ $(OBJDIR)/%.o: %.f90 $(MOBJS)
 	$(FC) $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 wabbit-post: main_post.f90 $(MOBJS) $(OBJS)
-		$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
-
-clean:
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS)
+clean-fortran:
 	rm -rf $(PROGRAMS) $(OBJDIR) a.out wabbit wabbit-post
-.PHONY: doc test
-=======
-##################################################################
-##################################################################
-#		MAKEFILE for WABBIT
-##################################################################
-##################################################################
-all: directories wabbit wabbit-post #python
-##################################################################
-include LIB/fortran.mk	# includes the makefile of fortran library
-include LIB/python.mk 	# includes the makefile of python library
-##################################################################
-
-#================================================================
-# Information about the makefile
-#================================================================
-info:
-	@echo -e "\n\n\n"
-	@echo -e  "command \t \t info"
-	@echo -e  "-------------------------------------------------------"
-	@echo -e "\e[1m make\e[0m \t\t \t generates all fortran binaries"
-	@echo -e "\e[1m make lib\e[0m \t\t fortran wabbit library libwabbit.a"
-	@echo -e "\e[1m make wabbit\e[0m \t\t generates wabbit main"
-	@echo -e "\e[1m make test\e[0m \t\t performs unit tests"
-	@echo -e "\e[1m make doc\e[0m \t \t generates documentation"
-	@echo -e "\e[1m make python\e[0m \t \t generate wabbit python lib"
-	@echo -e "\e[1m make clean\e[0m \t \t cleans binaries"
-	@echo -e "\e[1m make clean-python\e[0m \t clean python binaries"
-	@echo -e "\e[1m make clean-fortran\e[0m \t clean fortran binaries"
-	@echo -e  "-------------------------------------------------------"
-	@echo -e "\n\n\n"
-
-
-.PHONY: doc test directories
-#================================================================
-# Library of all wabbit modules
-#================================================================
-lib: directories libwabbit.a
-
-#================================================================
-# Documentation using doxygen
-#================================================================
->>>>>>> upstream/master
-doc:
-	doxygen doc/doc_configuration
-	firefox doc/output/html/index.html &
-#================================================================
-# Unit Testing
-#================================================================
-test: all 
-	./TESTING/runtests.sh
-
-#================================================================
-# If the object directory doesn't exist, create it.
-#================================================================
-directories: ${OBJDIR}
-
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-
-#================================================================
-# If the object directory doesn't exist, create it.
-#================================================================
-clean: clean-fortran clean-python
-
-##################################################################
-# Remarks:
-# 1. the @ forces make to execute the command without printing it
-# 	 first
-# 2. to execute a make in another directory append the command using
-#    semicolon (;)
-##################################################################

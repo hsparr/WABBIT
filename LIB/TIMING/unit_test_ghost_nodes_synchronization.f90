@@ -49,7 +49,8 @@ subroutine unit_test_ghost_nodes_synchronization( params, lgt_block, hvy_block, 
     real(kind=rk)                           :: ddx(1:3), xx0(1:3)
 
     ! grid parameter
-    integer(kind=ik)                        :: Bs, g, number_blocks
+    integer(kind=ik)                        :: g, number_blocks
+    integer(kind=ik), dimension(3)          :: Bs
     real(kind=rk)                           :: Lx, Ly, Lz
     ! data dimensionality
     integer(kind=ik)                        :: d, dF, max_neighbors
@@ -77,12 +78,11 @@ subroutine unit_test_ghost_nodes_synchronization( params, lgt_block, hvy_block, 
     Ly = params%domain_size(2)
     Lz = params%domain_size(3)
 
+    d = params%dim
     ! set data dimension
-    if ( params%threeD_case ) then
-        d = 3
+    if ( params%dim == 3 ) then
         max_neighbors = 74
     else
-        d = 2
         max_neighbors = 12
     endif
 
@@ -101,7 +101,7 @@ subroutine unit_test_ghost_nodes_synchronization( params, lgt_block, hvy_block, 
     number_blocks = params%number_blocks
 
     if (rank == 0) then
-      write(*,'("UNIT TEST: testing Bs=",i4," blocks-per-mpirank=",i5)')  Bs, params%number_blocks
+      write(*,'("UNIT TEST: testing Bs=",i4," x ",i4," x ",i4," blocks-per-mpirank=",i5)')  Bs(1),Bs(2),Bs(3), params%number_blocks
     end if
 
     !---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ subroutine unit_test_ghost_nodes_synchronization( params, lgt_block, hvy_block, 
     ! equivalent to using different block sizes, but way easier to program.
     ! These frequencies are tested:
     frequ=(/1.0_rk , 2.0_rk, 4.0_rk, 8.0_rk, 16.0_rk, 32.0_rk/)
-    allocate( coord_x( Bs + 2*g ), coord_y( Bs + 2*g ), coord_z( Bs + 2*g ) )
+    allocate( coord_x( Bs(1) + 2*g ), coord_y( Bs(2) + 2*g ), coord_z( Bs(3) + 2*g ) )
 
     ! loop over frequencies
     do ifrequ = 1 , size(frequ)
@@ -145,14 +145,18 @@ subroutine unit_test_ghost_nodes_synchronization( params, lgt_block, hvy_block, 
           call get_block_spacing_origin( params, lgt_id, lgt_block, xx0, ddx )
 
           ! fill coordinate arrays, of course including ghost nodes
-          do l = 1, Bs+2*g
+          do l = 1, Bs(1)+2*g
             coord_x(l) = real(l-(g+1), kind=rk) * ddx(1) + xx0(1)
+          enddo
+          do l = 1, Bs(2)+2*g
             coord_y(l) = real(l-(g+1), kind=rk) * ddx(2) + xx0(2)
+          enddo
+          do l = 1, Bs(3)+2*g
             coord_z(l) = real(l-(g+1), kind=rk) * ddx(3) + xx0(3)
           enddo
 
           ! calculate f(x,y,z) for first datafield
-          if ( params%threeD_case ) then
+          if ( params%dim == 3 ) then
             ! 3D:
             call f_xyz_3D( coord_x, coord_y, coord_z, hvy_block(:, :, :, 1, hvy_active(k)), Bs, g, Lx, Ly, Lz, frequ(ifrequ) )
           else

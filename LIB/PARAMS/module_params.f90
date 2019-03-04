@@ -63,7 +63,8 @@ module module_params
         ! threshold for wavelet indicator
         real(kind=rk)                                :: eps=0.0_rk
         logical                                      :: eps_normalized=.false.
-        logical :: force_maxlevel_dealiasing=.false.
+        logical :: force_maxlevel_dealiasing = .false.
+        logical :: threshold_mask = .false.
         ! minimal level for blocks in data tree
         integer(kind=ik)                             :: min_treelevel=0
         ! maximal level for blocks in data tree
@@ -81,7 +82,7 @@ module module_params
         character(len=80), dimension(:), allocatable  :: input_files
 
         ! grid parameter
-        integer(kind=ik)                             :: Bs=0        ! number of block nodes
+        integer(kind=ik), dimension(3)               :: Bs=(/ 0, 0, 0 /)      ! number of block nodes
         integer(kind=ik)                             :: n_ghosts=0 ! number of ghost nodes
 
         ! switch for mesh adaption
@@ -90,7 +91,12 @@ module module_params
         integer(kind=ik)                             :: number_blocks=0_ik
         ! number of allocated data fields in heavy data array, number of fields
         ! in heavy work data (depend from time step scheme, ...)
+<<<<<<< HEAD
         integer(kind=ik)                             :: n_eqn=0_ik
+=======
+        integer(kind=ik) :: n_eqn = 0_ik
+        integer(kind=ik) :: n_gridQ = 0_ik
+>>>>>>> upstream/master
 
         ! block distribution for load balancing (also used for start distribution)
         character(len=80)                            :: block_distribution=""
@@ -108,7 +114,6 @@ module module_params
         real(kind=rk)     :: domain_size(3)=0.0_rk
 
         ! use third dimension
-        logical           :: threeD_case=.false.
         integer(kind=ik)  :: dim=2 ! can be 2 or 3
 
         ! -------------------------------------------------------------------------------------
@@ -181,7 +186,5 @@ contains
     ! this file reads the ini file and distributes all the parameters to the
     ! various structs holding them
     include "ini_file_to_params.f90"
-
-
 
 end module module_params

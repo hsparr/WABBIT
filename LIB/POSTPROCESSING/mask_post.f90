@@ -13,7 +13,8 @@ subroutine mask_post(params)
     type (type_params), intent(inout)  :: params
     character(len=80)      :: fname_ini, fname_mask, fname_grid
     real(kind=rk)          :: time
-    integer(kind=ik)       :: iteration, k, lgt_id, lgt_n, hvy_n, Bs, tc_length, g
+    integer(kind=ik)       :: iteration, k, lgt_id, lgt_n, hvy_n, tc_length, g
+    integer(kind=ik), dimension(3) :: Bs
     character(len=2)       :: order
 
     integer(kind=ik), allocatable      :: lgt_block(:, :)
@@ -54,11 +55,6 @@ subroutine mask_post(params)
 
     ! get some parameters from one of the files (they should be the same in all of them)
     call read_attributes(fname_grid, lgt_n, time, iteration, domain, Bs, tc_length, params%dim)
-    if (params%dim==3) then
-        params%threeD_case = .true.
-    else
-        params%threeD_case = .false.
-    end if
 
     ! only (4* , for safety) lgt_n/number_procs blocks necessary (since we do not want to refine)
     !> \todo change that for 3d case
@@ -85,7 +81,7 @@ subroutine mask_post(params)
 
     call sync_ghosts( params, lgt_block, hvy_block, hvy_neighbor, hvy_active, hvy_n )
 
-    if (.not. allocated(us)) allocate(us(1:Bs+2*g, 1:Bs+2*g, 1:Bs+2*g, 1:3))
+    if (.not. allocated(us)) allocate(us(1:Bs(1)+2*g, 1:Bs(2)+2*g, 1:Bs(3)+2*g, 1:3))
 
     ! calculate vorticity from velocities
     do k = 1, hvy_n

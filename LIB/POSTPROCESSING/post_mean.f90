@@ -29,7 +29,8 @@ subroutine post_mean(params)
     integer(kind=tsize), allocatable        :: lgt_sortednumlist(:,:)
     integer(hsize_t), dimension(4)          :: size_field
     integer(hid_t)                          :: file_id
-    integer(kind=ik)                        :: lgt_id, k, Bs, nz, iteration, lgt_n, hvy_n, dim
+    integer(kind=ik)                        :: lgt_id, k, nz, iteration, lgt_n, hvy_n, dim
+    integer(kind=ik), dimension(3)          :: Bs
     real(kind=rk), dimension(3)             :: x0, dx
     real(kind=rk), dimension(3)             :: domain
     real(kind=rk)                           :: time
@@ -62,11 +63,6 @@ subroutine post_mean(params)
 
     ! add some parameters from the file
     call read_attributes(fname, lgt_n, time, iteration, domain, Bs, tc_length, dim)
-    if (dim==3) then
-        params%threeD_case = .true.
-    else
-        params%threeD_case = .false.
-    end if
 
     params%Bs = Bs
     params%n_eqn = 1
@@ -92,8 +88,8 @@ subroutine post_mean(params)
 
     ! compute an additional quantity that depends also on the position
     ! (the others are translation invariant)
-    if (params%threeD_case) then
-        nz = Bs
+    if (params%dim == 3) then
+        nz = Bs(3)
     else
         nz = 1
     end if
@@ -105,16 +101,16 @@ subroutine post_mean(params)
         call hvy_id_to_lgt_id(lgt_id, hvy_active(k), params%rank, params%number_blocks)
         call get_block_spacing_origin( params, lgt_id, lgt_block, x0, dx )
 
-        if (params%threeD_case) then
-            meanl = meanl + sum( hvy_block(g+1:Bs+g-1, g+1:Bs+g-1, g+1:Bs+g-1, 1, hvy_active(k)))*dx(1)*dx(2)*dx(3)
+        if (params%dim == 3) then
+            meanl = meanl + sum( hvy_block(g+1:Bs(1)+g-1, g+1:Bs(2)+g-1, g+1:Bs(3)+g-1, 1, hvy_active(k)))*dx(1)*dx(2)*dx(3)
         else
-            meanl = meanl + sum( hvy_block(g+1:Bs+g-1, g+1:Bs+g-1, 1, 1, hvy_active(k)))*dx(1)*dx(2)
+            meanl = meanl + sum( hvy_block(g+1:Bs(1)+g-1, g+1:Bs(2)+g-1, 1, 1, hvy_active(k)))*dx(1)*dx(2)
         endif
     end do
 
     call MPI_REDUCE(meanl,meani,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,WABBIT_COMM,mpicode)
 
-    if (params%threeD_case) then
+    if (params%dim == 3) then
         meani = meani / (params%domain_size(1)*params%domain_size(2)*params%domain_size(3))
     else
         meani = meani / (params%domain_size(1)*params%domain_size(2))

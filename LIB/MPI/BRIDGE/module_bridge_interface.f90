@@ -97,12 +97,14 @@ double precision, dimension(3,2)             :: Domain     ! received domain par
 integer         , dimension(5)             :: discretizationParams ! Number of grid points and processes
 character(len=80)                            :: geometry
 
-
   ! Only the root particle process receive the parameters from the root fluid process
   if (myBridge%myWorldRank == 0) then                              ! check if the process is the root process
 
+    if (sum(params%Bs(1:params%dim) - params%Bs(1)) .ne. 0) then
+      call abort(24010149, "You tried to send something with different Bs in different directions, but this is not (yet) implemented here.")
+    endif
     ! - receive the discretization parameters
-    discretizationParams=(/ params%Bs,  &
+    discretizationParams=(/ params%Bs(1),  &
                             params%number_blocks,       &
                             params%max_treelevel,       &
                             params%dim,                 &
@@ -425,7 +427,7 @@ position_to_lgt_id=-999999
     do k=1,lgt_n ! loop over all active blocks
 
        call get_block_spacing_origin( params, lgt_active(k), lgt_block, x0, dx )
-       x1=x0(:)+dx(:)*(params%Bs-1)
+       x1=x0(:)+dx(:)*(params%Bs(1)-1)
        ! check if position is inside the block with origin x0 and size dx
        ! if yes:   found the right block with its lgt_id
        ! if not:   go to the next block
@@ -438,7 +440,7 @@ position_to_lgt_id=-999999
        !                    x0(2) -------------------------- x1(2)
 
        if (min(position(1)-x0(1),position(2)-x0(2))>=0 .and. max(position(1)-x1(1),position(2)-x1(2))<=0) then
-          if (params%threeD_case) then ! in 3d we have to check the 3. komponent as well
+          if (params%dim == 3) then ! in 3d we have to check the 3. komponent as well
           ! 3D case
               if (position(3)>x0(3) .and. position(3)<x1(3)) then
                 position_to_lgt_id=lgt_active(k)
@@ -540,14 +542,14 @@ subroutine interpolate_data(lgt_block, hvy_block, hvy_work, hvy_neighbor, hvy_ac
         !!! calculate grid point ibx, iby, ibz
         ibx   = int( (positions(1,k)-x0(1))/dx(1) ) + params%n_ghosts +1
         iby   = int( (positions(2,k)-x0(2))/dx(2) ) + params%n_ghosts +1
-        if (params%threeD_case) then
+        if (params%dim == 3) then
           ibz = int( (positions(3,k)-x0(3))/dx(3) ) + params%n_ghosts +1
         else
           ibz = 1
         endif
         ! if ( positions(1,k)>1.0_rk .and. params%rank==0 ) then
-        !   write(*,'("hvy_id =", i6, " x=", f6.3," [xmin,xmax]=[",f6.3,",",f6.3,"]")')particle_id(k),positions(1,k),x0(1), x0(1)+dx(1)*(params%Bs-1)
-        !   write(*,'("hvy_id =", i6, " y=", f6.3," [ymin,ymax]=[",f6.3,",",f6.3,"]")')particle_id(k),positions(2,k),x0(2), x0(2)+dx(2)*(params%Bs-1)
+        !   write(*,'("hvy_id =", i6, " x=", f6.3," [xmin,xmax]=[",f6.3,",",f6.3,"]")')particle_id(k),positions(1,k),x0(1), x0(1)+dx(1)*(params%Bs(1)-1)
+        !   write(*,'("hvy_id =", i6, " y=", f6.3," [ymin,ymax]=[",f6.3,",",f6.3,"]")')particle_id(k),positions(2,k),x0(2), x0(2)+dx(2)*(params%Bs(2)-1)
         ! endif
         ! remark: the first 3 dimensions of hvy_block project the grid structure into the array
         ! this means:
@@ -579,7 +581,7 @@ subroutine interpolate_data(lgt_block, hvy_block, hvy_work, hvy_neighbor, hvy_ac
             / hvy_block(ibx, iby, ibz,1, particle_id(k) )
       v   =   hvy_block(ibx, iby, ibz,3, particle_id(k) ) &
             / hvy_block(ibx, iby, ibz,1, particle_id(k) )
-      if (params%threeD_case) then
+      if (params%dim == 3) then
         if (params%n_eqn /= 5) then
           call abort(333990,"[bridgefluid] number of data fields is less then 5, Stop")
         else

@@ -54,7 +54,7 @@ module module_ini_files_parser
 
 
 !!!!!!!!
-contains
+contains !count_entries, merge_blancs
 !!!!!!!!
 
 
@@ -236,16 +236,17 @@ end subroutine read_intarray_from_ascii_file
   ! Read the file paramsfile, count the lines and put the
   ! text in PARAMS.
   !-------------------------------------------------------------------------------
-  subroutine read_ini_file(PARAMS, file, verbose)
+  subroutine read_ini_file(PARAMS, file, verbose, remove_comments)
     implicit none
 
     type(inifile), intent(inout) :: PARAMS
     character(len=*) :: file ! this is the file we read the PARAMS from
     character(len=maxcolumns) :: line
     logical, optional, intent(in) :: verbose
+    logical, optional, intent(in) :: remove_comments
 
     integer :: io_error, i
-    logical :: exists
+    logical :: exists, remove_comments2
 
     ! check if the specified file exists
     inquire ( file=file, exist=exists )
@@ -260,6 +261,12 @@ end subroutine read_intarray_from_ascii_file
       verbosity = verbose
     else
       verbosity = .true.
+    endif
+
+    if (present(remove_comments)) then
+        remove_comments2 = remove_comments
+    else
+        remove_comments2 = .true.
     endif
 
     if (verbosity) then
@@ -290,13 +297,15 @@ end subroutine read_intarray_from_ascii_file
         line = adjustl(line)
 
         ! remove everthing after ";", if it occurs ( comments )
-        if (index(line,";") /= 0) then
+        if (index(line,";") /= 0 .and. remove_comments2) then
           line( index(line,";")+1:len_trim(line) ) = " "
         endif
 
         ! remove commented lines completely
+        if (remove_comments2) then
         if (line(1:1) == ";" .or. line(1:1) == "!" .or. line(1:1) == "#" .or. line(1:1) == "%") then
           line = " "
+        endif
         endif
 
         PARAMS%PARAMS(i) = line
@@ -473,7 +482,7 @@ end subroutine read_intarray_from_ascii_file
     real(kind=rk) :: params_vector(1:)
     real(kind=rk), optional, intent(in) :: defaultvalue(1:)
 
-    integer :: n,m
+    integer :: n, m
     character(len=maxcolumns) :: value
     character(len=14)::formatstring
 
@@ -1139,6 +1148,5 @@ if (verbosity) then
   write(*,'("Read ",A,"::",A," as Matrix of size ",i6," x ",i4)') trim(section), trim(keyword), matrixlines, matrixcols
 endif
 end subroutine param_matrix_read
-
 
 end module
