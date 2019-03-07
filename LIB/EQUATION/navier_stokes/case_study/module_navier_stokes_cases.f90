@@ -13,7 +13,8 @@ module module_navier_stokes_cases
     use module_simple_geometry
     use module_shock
     use module_pipe_flow
-
+    use module_skimmer
+    use module_guderley_problem
 
     implicit none
     ! I usually find it helpful to use the private keyword by itself initially, which specifies
@@ -46,6 +47,10 @@ contains
     call read_params_shock_tube(params_ns,FILE)
   case('pipe_flow')
     call read_params_pipe_flow(params_ns,FILE)
+  case ('skimmer')
+    call read_params_skimmer(params_ns,FILE)
+  case('Guderley_Problem')
+    call read_params_guderley_problem(params_ns,FILE)
   case('no')
 
   case default
@@ -80,6 +85,12 @@ end subroutine read_case_parameters
       case('funnel')
         call set_inicond_funnel(x0, dx, Bs, g, phi )
         return
+      case('skimmer')
+        call set_inicond_skimmer(x0, dx, Bs, g, phi )
+      return
+!      case('Guderley_Problem')
+!        call set_inicond_guderley_problem(x0, dx, Bs, g, phi )
+      return  
       case('shock_tube')
         call set_inicond_shock_tube(x0, dx, Bs, g, phi )
         return
@@ -114,8 +125,12 @@ end subroutine read_case_parameters
        call geometry_penalization2D(Bs, g, x0, dx, phi(:,:,rhoF), mask, phi_ref)
      case('funnel')
        call funnel_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
+      case('skimmer')
+       call skimmer_penalization2D(Bs, g, x0, dx, phi, mask, phi_ref)
      case('pipe_flow')
        call pipe_flow_penalization2D(Bs, g, x0, dx, mask, phi_ref)
+     case ('Guderley_Problem')
+       call guderley_penalization2D(Bs, g, x0, dx, mask, phi_ref)
      case('no')
        return
      case default
@@ -183,6 +198,10 @@ end subroutine read_case_parameters
         call draw_geometry(x0, dx, Bs, g, mask)
       case('funnel')
         call draw_funnel(x0, dx, Bs, g, mask,is_colored)
+      case('skimmer')
+        call draw_skimmer(x0, dx, Bs, g, mask,is_colored)
+      case('Guderley_Problem')
+     !   call draw_guderley_sponges(mask, x0, dx, Bs, g, is_colored )
       case('shock_tube')
         call draw_simple_shock(mask(:,:,:), x0, dx, Bs, g )
       case('no')

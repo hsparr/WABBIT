@@ -160,6 +160,7 @@ contains
   !-----------------------------------------------------------------------------
   subroutine RHS_NStokes( time, u, g, x0, dx, rhs, stage, boundary_flag )
     use module_funnel, only:mean_quantity, integrate_over_pump_area
+    use module_skimmer, only:mean_quantity_skimmer, integrate_over_pump_area_skimmer
     implicit none
 
     ! it may happen that some source terms have an explicit time-dependency
@@ -198,7 +199,7 @@ contains
     integer(kind=2)          , intent(in):: boundary_flag(3)
 
     ! Area of mean_density
-    real(kind=rk)    ,save             :: integral(5),area
+    real(kind=rk)    ,save             :: integral(1:10),area
 
 
     ! local variables
@@ -237,6 +238,12 @@ contains
         call convert_statevector(rhs(:,:,:,:),'pure_variables')
         call integrate_over_pump_area(rhs(:,:,:,:),g,Bs,x0,dx,integral,area)
       endif
+      if (params_ns%case=="skimmer") then
+        ! since rhs was not computed yet we can use it as a temporary storage
+        rhs=u
+        call convert_statevector(rhs(:,:,:,:),'pure_variables')
+        call integrate_over_pump_area_skimmer(rhs(:,:,:,:),g,Bs,x0,dx,integral) 
+       endif
 
     case ("post_stage")
       !-------------------------------------------------------------------------
@@ -246,6 +253,11 @@ contains
       if (params_ns%case=="funnel") then
         ! reduce sum on each block to global sum
         call mean_quantity(integral,area)
+      endif
+      
+      if (params_ns%case=="skimmer") then
+        ! reduce sum on each block to global sum
+        call mean_quantity_skimmer(integral)
       endif
 
     case ("local_stage")
@@ -810,7 +822,7 @@ contains
     dt = 9.9e9_rk
     dx_min=minval(dx(1:params_ns%dim))
 
-    if (maxval(abs(u))>1.0e7 .OR. minval(u(:,:,:,pF))<0 ) then
+    if (maxval(abs(u))>1.0e15 .OR. minval(u(:,:,:,pF))<0 ) then
          call abort(65761,"ERROR [module_navier_stokes.f90]: statevector values out of physical range")
     endif
     if(params_ns%dim==2) then

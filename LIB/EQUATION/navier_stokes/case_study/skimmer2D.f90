@@ -5,7 +5,8 @@ subroutine  skimmer_penalization2D(Bs, g, x_0, delta_x, phi, mask, phi_ref)
   use module_helpers
   implicit none
     ! -----------------------------------------------------------------
-    integer(kind=ik), intent(in)  :: Bs, g          !< grid parameter
+    integer(kind=ik), intent(in)  ::  g          !< grid parameter
+    integer(kind=ik), dimension(3), intent(in) :: Bs
     real(kind=rk), intent(in)     :: x_0(2), delta_x(2)   !< coordinates of block and block spacinf
     real(kind=rk), intent(in)     :: phi(:,:,:)     !< state vector
     real(kind=rk), intent(inout)  :: phi_ref(:,:,:) !< reference values of penalized volume
@@ -16,7 +17,7 @@ subroutine  skimmer_penalization2D(Bs, g, x_0, delta_x, phi, mask, phi_ref)
     ! -----------------------------------------------------------------
     call cartesian2cylinder(x_0, delta_x, dx, dr, x0, r0)
 
-    if (.not. allocated(mask_color))  allocate(mask_color(1:Bs+2*g, 1:Bs+2*g))
+    if (.not. allocated(mask_color))  allocate(mask_color(1:Bs(1)+2*g, 1:Bs(2)+2*g))
     !!> todo implement function check_if_mesh_adapted (true/false) in adapt mesh
     if ( mesh_was_adapted .eqv. .true. ) then
       ! dont switch the order of draw_skimmer3D and draw_sponge3D,
@@ -34,7 +35,8 @@ end subroutine  skimmer_penalization2D
 subroutine draw_skimmer2D(r0, dr, x0, dx, Bs, g, mask, mask_color)
     implicit none
     ! -----------------------------------------------------------------
-    integer(kind=ik), intent(in)             :: Bs, g          !< grid parameter
+    integer(kind=ik), intent(in)             ::  g          !< grid parameter
+    integer(kind=ik), dimension(3), intent(in) :: Bs
     real(kind=rk), intent(in)                :: r0, dr, x0, dx   !< coordinates of block and block spacinf
     real(kind=rk), intent(inout)             :: mask(:,:,:)    !< mask function
     integer(kind=2), intent(inout), optional :: mask_color(:,:)!< identifyers of mask parts (plates etc)
@@ -48,11 +50,11 @@ subroutine draw_skimmer2D(r0, dr, x0, dx, Bs, g, mask, mask_color)
     h  = 1.5_rk*max(dx, dr)
 
     ! smooth width in x and y direction
-    do ir=g+1, Bs+g
+    do ir=g+1, Bs(2)+g
       ! y = dble(iy-(g+1)) * dx(2) + x0(2)
        r = abs(dble(ir-(g+1)) *dr +r0)
        
-       do ix=g+1, Bs+g
+       do ix=g+1, Bs(1)+g
             x = dble(ix-(g+1)) * dx + x0
 
             !=============================
@@ -95,7 +97,8 @@ end subroutine  draw_skimmer2D
 subroutine draw_sponge2D(r0, dr, x0 , dx, Bs, g, mask, mask_color)
     implicit none
     ! -----------------------------------------------------------------
-    integer(kind=ik), intent(in)             :: Bs, g          !< grid parameter
+    integer(kind=ik), intent(in)             ::  g          !< grid parameter
+    integer(kind=ik), dimension(3), intent(in) :: Bs
     real(kind=rk), intent(in)                :: r0, dr, x0, dx   
     real(kind=rk), intent(inout)             :: mask(:,:,:)    !< mask function
     integer(kind=2), intent(inout), optional :: mask_color(:,:)!< identifyers of mask parts (plates etc)
@@ -109,12 +112,11 @@ subroutine draw_sponge2D(r0, dr, x0 , dx, Bs, g, mask, mask_color)
     h  = 1.5_rk*max(dx, dr)
 
     ! smooth width in x and y direction
-    do ir=g+1, Bs+g
+    do ir=g+1, Bs(2)+g
       ! y = dble(iy-(g+1)) * dx(2) + x0(2)
        r = abs(dble(ir-(g+1)) * dr +r0)
-       do ix=g+1, Bs+g
+       do ix=g+1, Bs(1)+g
             x = dble(ix-(g+1)) * dx + x0 
-                                      ! the temperature of the skimmer
 
             ! Outlet flow: PUMPS
             ! ------------------
@@ -177,7 +179,8 @@ end subroutine  draw_sponge2D
 subroutine  compute_penal2D(mask_color,mask,phi,r0, dr, x0, dx, Bs, g ,phi_ref)
     implicit none
     ! -----------------------------------------------------------------
-    integer(kind=ik), intent(in)  :: Bs, g          !< grid parameter
+    integer(kind=ik), intent(in)  ::  g          !< grid parameter
+    integer(kind=ik), dimension(3), intent(in) :: Bs
     real(kind=rk), intent(in)     :: r0, dr, x0, dx   !< coordinates of block and block spacing
     integer(kind=2), intent(inout):: mask_color(:,:)!< identifyers of mask parts (plates etc)
     real(kind=rk), intent(in)     :: phi(:,:,:)     !< state vector
@@ -219,10 +222,10 @@ subroutine  compute_penal2D(mask_color,mask,phi,r0, dr, x0, dx, Bs, g ,phi_ref)
 
   
     ! smooth width in x and y direction
-    do ir=1+g, Bs+g
+    do ir=1+g, Bs(2)+g
       ! y = dble(iy-(g+1)) * dx(2) + x0(2)
        r = abs(dble(ir-(g+1))* dr + r0)
-       do ix=1+g, Bs+g
+       do ix=1+g, Bs(1)+g
             x = dble(ix-(g+1)) * dx + x0
             rho = phi(ix,ir,rhoF)
             u   = phi(ix,ir,UxF)
@@ -442,7 +445,7 @@ function draw_pumps_volume_flow(x,r,skimmer,h)
  real(kind=rk)                         ::  mask, draw_pumps_volume_flow,r0,width
 
   mask  =0
-  width =skimmer%wall_thickness_y!*0.5_rk
+  width =skimmer%wall_thickness_y*0.5_rk
   r0    =(R_domain-skimmer%wall_thickness_y*2.0_rk)
   if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1) .or. &
        x>skimmer%plate(1)%x0(1)+skimmer%plates_thickness .and. x< skimmer%plate(2)%x0(1)) then 
@@ -504,38 +507,11 @@ function draw_outlet(x,r,skimmer,h)
    !!!draw_outlet=smoothstep(domain_size(1)-x-skimmer%wall_thickness,h)
     draw_outlet=soft_bump2(x,skimmer%plate(2)%x0(1)+skimmer%plates_thickness,domain_size(1)-skimmer%plate(2)%x0(1)-skimmer%plates_thickness-skimmer%wall_thickness_x,h) &
             *smoothstep(r-skimmer%max_inner_diameter_2*0.25_rk+skimmer%wall_thickness_y*0.5_rk,h)
-          !  *smoothstep(r-(skimmer%max_inner_diameter_2-skimmer%wall_thickness_x-h-skimmer%min_inner_diameter),h)
-       !  x_sk_2    = (x-(skimmer%plate(2)%x0(1)-skimmer%l_sk2_in+skimmer%plate%width))
-     ! if(x< skimmer%plate(2)%x0(1)) then
- 
-  !   r3        = tan(skimmer%alpha_1)*x_sk_2+height 
-  ! else
-  !   r3 = skimmer%plate(2)%x0(1) 
-  ! endif
 
-  !   r4        = tan(skimmer%alpha_2)*x_sk_2+height 
-  !  delta_r2     = skimmer%plate(2)%r_out-skimmer%plate(2)%r_in
-
-  !   if (x > plate%width+skimmer%plate(2)%x0(1)-skimmer%l_sk2_in  .and. x <  skimmer%plate(2)%x0(1)+plate%width.and. &
-  !    r <r3  .and. r > r4 ) then 
-  !     mask =1
-  ! endif
 
 end function draw_outlet
 
 
-function draw_sink(x,r,skimmer,h)
-
-  real(kind=rk),    intent(in)          :: x, r, h
-  type(type_skimmer),intent(in)         ::skimmer
-
-  real(kind=rk)                         ::draw_sink,radius
-
-  radius     = sqrt((x-domain_size(1)+skimmer%wall_thickness_x*0.6_rk)**2+r**2)
-  draw_sink  = smoothstep(r-skimmer%min_inner_diameter*0.4_rk,h)
-
-
-end function draw_sink
 
 
 
@@ -595,7 +571,8 @@ end function draw_sink
       implicit none
 
       !> grid parameter (g ghostnotes,Bs Bulk)
-      integer(kind=ik), intent(in)                     :: Bs, g
+      integer(kind=ik), intent(in)                     ::  g
+      integer(kind=ik), dimension(3), intent(in)       :: Bs
       !> density,pressure
       real(kind=rk), dimension(1:,1:,1:), intent(in)   :: u
       !> spacing and origin of block
@@ -615,7 +592,7 @@ end function draw_sink
       width =skimmer%wall_thickness_y
       tmp   =  0.0_rk
       r0    =(R_domain-2*skimmer%wall_thickness_y)
-       do ir=g+1, Bs+g
+       do ir=g+1, Bs(2)+g
 !         if (params%coordinate == "cylydrical") then
          ! y = dble(iy-(g+1)) * dx(2) + x0(2)
 !          r = abs(dble(ir-(g+1)) * dr +r0
@@ -634,7 +611,7 @@ end function draw_sink
           y = dble(ir-(g+1)) * dx(2) + x0(2)
           r = abs(y-R_domain)
          if  ( r>r0 .and. r<r0+width) then
-          do ix=g+1, Bs+g
+          do ix=g+1, Bs(1)+g
               x = dble(ix-(g+1)) * dx(1) + x0(1)
                 if ( x>skimmer%wall_thickness_x .and. x<skimmer%plate(1)%x0(1)) then 
                 tmp(1:4)  = tmp(1:4)+ u(ix,ir,:)

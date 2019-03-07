@@ -92,21 +92,12 @@ subroutine compute_vorticity_post(params)
     params%domain_size(3) = domain(3)
     params%Bs = Bs
     allocate(params%butcher_tableau(1,1))
-<<<<<<< HEAD
-<<<<<<< HEAD
     ! only (4* , for safety) lgt_n/number_procs blocks necessary (since we do not want to refine)
     !> \todo change that for 3d case
     params%number_blocks = 2_ik*lgt_n/params%number_procs
-=======
     ! no refinement is made in this postprocessing tool; we therefore allocate about
     ! the number of blocks in the file (and not much more than that)
     params%number_blocks = ceiling(  real(lgt_n)/real(params%number_procs) )
->>>>>>> upstream/master
-=======
-    ! no refinement is made in this postprocessing tool; we therefore allocate about
-    ! the number of blocks in the file (and not much more than that)
-    params%number_blocks = ceiling(  real(lgt_n)/real(params%number_procs) )
->>>>>>> upstream/master
     if (params%rank==0) params%number_blocks = params%number_blocks + &
     mod(lgt_n, params%number_procs)
 
@@ -136,15 +127,7 @@ subroutine compute_vorticity_post(params)
         call get_block_spacing_origin( params, lgt_id, lgt_block, x0, dx )
 
         if (operator == "--vorticity" .or. operator == "--vor-abs") then
-<<<<<<< HEAD
-<<<<<<< HEAD
-            if (params%threeD_case) then
-=======
             if (params%dim == 3) then
->>>>>>> upstream/master
-=======
-            if (params%dim == 3) then
->>>>>>> upstream/master
                 call compute_vorticity(hvy_block(:,:,:,1,hvy_active(k)), &
                 hvy_block(:,:,:,2,hvy_active(k)), hvy_block(:,:,:,3,hvy_active(k)),&
                 dx, params%Bs, params%n_ghosts,&
@@ -189,15 +172,7 @@ subroutine compute_vorticity_post(params)
 
     elseif (operator == "--vor-abs") then
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        if (.not. params%threeD_case) then
-=======
         if (.not. params%dim == 3) then
->>>>>>> upstream/master
-=======
-        if (.not. params%dim == 3) then
->>>>>>> upstream/master
             call abort(221218, "--vor-abs makes no sense for 2D data...")
         endif
 
