@@ -210,7 +210,7 @@ contains
     call read_param_mpi(FILE, 'skimmer', 'outlet_pressure' , skimmer%outlet_pressure, 1.0_rk)
     skimmer%outlet_density=skimmer%outlet_pressure/(params_ns%Rs*skimmer%temperatur)
     if (skimmer%length         >domain_size(1)-2.0_rk*skimmer%wall_thickness_x .or. &
-    skimmer%outer_diameter*0.49_rk >R_domain-skimmer%wall_thickness_y) then
+    skimmer%outer_diameter*0.48_rk >R_domain-skimmer%wall_thickness_y) then
       call abort(5032,"ERROR [skimmer.f90]:skimmer is larger then simulation domain!")
     endif
     !initialice geometry of ion skimmer plates
@@ -252,7 +252,7 @@ subroutine  draw_skimmer(x_0, delta_x, Bs, g, mask, mask_is_colored)
     mask_tmp    = 0.0_rk
     mask_color  = 0
     call  cartesian2cylinder(x_0(1:2),delta_x(1:2),dx,dr,x0,r0)
-     ! do not switch draw_funnel2D and draw_sponge2D becasue maks are reseted in draw_funnel2D
+     ! do not switch draw_funnel2D and draw_sponge2D becasue maks are reseted in draw_skimmer2D
     call  draw_skimmer2D(r0, dr, x0, dx, Bs, g, mask_tmp(:,:,1,:), mask_color(:,:,1))
     call  draw_sponge2D(r0,dr, x0, dx, Bs,g,mask_tmp(:,:,1,:), mask_color(:,:,1))
   endif

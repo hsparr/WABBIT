@@ -25,7 +25,7 @@
 
     integer(kind=ik)          :: ix,iy,iz,dF
     integer(kind=ik), dimension(3) :: Bs
-    real(kind=rk)             :: x,y_rel,tmp(1:3),b,mach,T_init,x_cntr(3),sigma,&
+    real(kind=rk)             :: x,y,y_rel,tmp(1:3),b,mach,T_init,x_cntr(3),sigma,y_cntr(3),&
                                 left(size(u,4)),right(size(u,4)),phi_init(size(u,4))
     real(kind=rk),allocatable:: mask(:,:,:) ! we dont save this datafield, since it is only called once
 
@@ -141,7 +141,7 @@
       if (params_ns%dim==3) then
         u( :, :, :, UzF) = (1-mask)*phi_init(UyF)*sqrt(phi_init(rhoF)) !flow in z
       endif
-    case ("pressure_wave")
+    case ("pressure_wave_x")
     ! initialice a pressure wave at the x=0 domain boundary
    !        periodic BC                     non periodic BC
    !       ^ pressure                     ^ Pressure
@@ -168,6 +168,34 @@
             endif
             ! set actual inicond gauss blob
             u(ix,:,:,pF) = phi_init(pF)*(0.1+0.9*dexp( -(x-x_cntr(1))**2 / (2*sigma**2)) )
+        end do
+    case ("pressure_wave_y")
+    ! initialice a pressure wave at the y=0 domain boundary
+   !        periodic BC                     non periodic BC
+   !       ^ pressure                     ^ Pressure
+   !       |                              |
+   ! p=p_0 |_                   _:        |–
+   !       |  \               /  :        |  \
+   !       |   \             /   :        |   \             :
+   !       |    \_p=0.1p_0__/    :        |    \____________:
+   !       +---------------------:--> x   +-----------------:-----> x
+   !       :                     :        :                 :
+   !      x=0                   x=L      x=0               x=L
+        u            = 0.0_rk
+        u(:,:,:,rhoF)= sqrt(phi_init(rhoF))
+        ! create gauss wave along the y axis
+        y_cntr(1) = params_ns%domain_size(2)*0.5_rk
+        sigma     = params_ns%inicond_width
+        do iy = 1,Bs(2)+2*g
+            ! compute x,y coordinates from spacing and origin
+            y = dble(iy-(g+1)) *dx(2) + x0(2)
+            if (params_ns%periodic_BC(2)) then
+              y = abs(0.5*params_ns%domain_size(2)-y)
+            else
+              y = 0.5*params_ns%domain_size(2)-y
+            endif
+            ! set actual inicond gauss blob
+            u(:,iy,:,pF) = phi_init(pF)*(0.1+0.9*dexp( -(y-y_cntr(1))**2 / (2*sigma**2)) )
         end do
     case ("pressure_blob")
         ! pressure component has a gaus function with maximum given by the
@@ -326,7 +354,7 @@
               call continue_periodic(x,L(1))
               call continue_periodic(y,L(2))
               ! set actual inicond gauss blob
-              u(ix,iy,1) = A*dexp( -( (x-x_cntr(1))**2 + (y-x_cntr(2))**2 ) / (2*sigma**2) )
+              u(ix,iy,1) = A*(0.1+0.9*dexp( -( (x-x_cntr(1))**2 + (y-x_cntr(2))**2 ) / (2*sigma**2) ))
             end do
           end do
 

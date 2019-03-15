@@ -822,7 +822,7 @@ contains
     dt = 9.9e9_rk
     dx_min=minval(dx(1:params_ns%dim))
 
-    if (maxval(abs(u))>1.0e15 .OR. minval(u(:,:,:,pF))<0 ) then
+    if (maxval(abs(u))>1.0e7 .OR. minval(u(:,:,:,pF))<0 ) then
          call abort(65761,"ERROR [module_navier_stokes.f90]: statevector values out of physical range")
     endif
     if(params_ns%dim==2) then
