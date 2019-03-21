@@ -184,18 +184,18 @@
         u            = 0.0_rk
         u(:,:,:,rhoF)= sqrt(phi_init(rhoF))
         ! create gauss wave along the y axis
-        y_cntr(1) = params_ns%domain_size(2)*0.5_rk
+        x_cntr(2) = params_ns%domain_size(2)*0.5_rk
         sigma     = params_ns%inicond_width
         do iy = 1,Bs(2)+2*g
             ! compute x,y coordinates from spacing and origin
             y = dble(iy-(g+1)) *dx(2) + x0(2)
             if (params_ns%periodic_BC(2)) then
               y = abs(0.5*params_ns%domain_size(2)-y)
-            else
-              y = 0.5*params_ns%domain_size(2)-y
+           ! else
+            !  y = 0.5*params_ns%domain_size(2)-y
             endif
             ! set actual inicond gauss blob
-            u(:,iy,:,pF) = phi_init(pF)*(0.1+0.9*dexp( -(y-y_cntr(1))**2 / (2*sigma**2)) )
+            u(:,iy,:,pF) = phi_init(pF)*(0.5+0.5*dexp( -(y-x_cntr(2))**2 / (2*sigma**2)) )
         end do
     case ("pressure_blob")
         ! pressure component has a gaus function with maximum given by the
@@ -212,6 +212,22 @@
           u( :, :, :, UxF) = phi_init(UxF)*sqrt(phi_init(rhoF))
           u( :, :, :, UyF) = phi_init(UyF)*sqrt(phi_init(rhoF))
         endif
+    case ("pressure_ring")
+        ! pressure component has a gaus function with maximum given by the
+        ! initial value of the pressure.
+        ! all other statevariables are set constant to the intial values
+        call gauss_function( params_ns%inicond_width,params_ns%dim, &
+                                Bs,g, params_ns%domain_size, u(:,:,:,pF), x0, dx, phi_init(pF))
+        u( :, :, :, rhoF)= sqrt(phi_init(rhoF))
+        if (params_ns%dim==3) then
+          u( :, :, :, UxF) = phi_init(UxF)*sqrt(phi_init(rhoF))
+          u( :, :, :, UyF) = phi_init(UyF)*sqrt(phi_init(rhoF))
+          u( :, :, :, UzF) = phi_init(UzF)*sqrt(phi_init(rhoF))
+        else
+          u( :, :, :, UxF) = phi_init(UxF)*sqrt(phi_init(rhoF))
+          u( :, :, :, UyF) = phi_init(UyF)*sqrt(phi_init(rhoF))
+        endif
+
     case default
         call abort(7771,"the initial condition is unkown: "//trim(adjustl(params_ns%inicond)))
     end select
@@ -327,13 +343,14 @@
         real(kind=rk), intent(in),optional :: amplitude  !< maximum of the gauss blob \f$A\f$ is optional
 
 
-        ! auxiliary variable for gauss pulse
-        real(kind=rk)                           :: x_cntr(3), x, z ,y,A
+        ! auxiliary variable for gauss pulse,
+        real(kind=rk)                           :: x_cntr(3), x, z ,y,A, r0
         ! loop variables
         integer(kind=ik)                        :: ix, iy, iz
 
         ! center point of the pressure blob
         x_cntr = 0.5_rk * L
+        r0     = 0.25_rk * params_ns%domain_size(1)
         ! amplitude
         if ( present(amplitude) ) then
           A = amplitude
@@ -353,8 +370,12 @@
               ! shift to new gauss blob center
               call continue_periodic(x,L(1))
               call continue_periodic(y,L(2))
+              if ( params_ns%inicond =='pressure_ring')then
               ! set actual inicond gauss blob
+              u(ix,iy,1) = A*(0.5+0.5*dexp( -((sqrt((x-x_cntr(1))**2 + (y-x_cntr(2))**2)-r0)**2 ) / (2*sigma**2) ))
+              else 
               u(ix,iy,1) = A*(0.1+0.9*dexp( -( (x-x_cntr(1))**2 + (y-x_cntr(2))**2 ) / (2*sigma**2) ))
+              end if
             end do
           end do
 

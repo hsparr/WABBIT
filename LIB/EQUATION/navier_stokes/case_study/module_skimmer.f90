@@ -354,8 +354,7 @@ end subroutine draw_skimmer
 
       A_1 = integral(5)
       A_2 = integral(10)
-!      write (*,*) "A_1=", A_1  
-!      write (*,*) "A_2=", A_2
+!      write (*,*) "A_1=", A_1 , "A_2=", A_2
       if ( .not.  A_1>  0 .or. .not. A_2> 0 ) then
         call abort(24636,"Error [skimmer.f90]: only chuck norris can devide by zero!!")
       endif
