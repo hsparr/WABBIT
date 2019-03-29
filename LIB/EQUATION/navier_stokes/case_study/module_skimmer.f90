@@ -79,10 +79,11 @@ module module_skimmer
       real(kind=rk)       ::plates_thickness      =-1.0_rk !
       real(kind=rk)       ::first_plate_thickness =-1.0_rk
       real(kind=rk)       ::temperatur            =-1.0_rk ! temperatur of plates
-      real(kind=rk)       ::alpha_1               =-1.0_rk !
-      real(kind=rk)       ::alpha_2               =-1.0_rk !
-      real(kind=rk)       ::l_sk1_in              =-1.0_rk !
-      real(kind=rk)       ::l_sk2_in             =-1.0_rk !
+      real(kind=rk)       ::alpha_1               =-1.0_rk ! outer angle of skimmer
+      real(kind=rk)       ::alpha_2               =-1.0_rk ! inner angle of skimmer
+      real(kind=rk)       ::l_sk1_in              =-1.0_rk ! lenght of the first skimmer
+      real(kind=rk)       ::l_sk2_in             =-1.0_rk ! length of the 2nd skimmer
+      real(kind=rk)       ::b                    =-1.0_rk !distance between capillarieend end first skimmer
  
       real(kind=rk)       ::length                =-1.0_rk ! total length of funnel
       real(kind=rk)       ::slope                 =-1.0_rk ! slope of funnel
@@ -154,6 +155,7 @@ contains
       call read_param_mpi(FILE, 'skimmer', 'first_plate_thickness'    , skimmer%first_plate_thickness, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'distance_first_skimmer_Wallwest'  , skimmer%plates_distance, 1.0_rk)
       call read_param_mpi(FILE, 'skimmer', 'distance_first_skimmer_to2nd_skimmer'  , skimmer%plates_distance_2, 1.0_rk)
+      call read_param_mpi(FILE, 'skimmer', 'distance_capillary_to_skimmer'         , skimmer%b, 1.0_rk)
        ! this parameters are global in skimmer module!
       Rs         =params%Rs
       gamma_     =params%gamma_
@@ -259,11 +261,11 @@ subroutine  draw_skimmer(x_0, delta_x, Bs, g, mask, mask_is_colored)
 
   ! mask coloring is optional, which is mainly used for plotting the different parts
   ! of the skimmer in paraview
-  if (is_colored) then
+  if (.false.) then
     mask(:,:,:)= real(mask_color(:,:,:),kind=rk)
   else
     ! if the mask is not colored we use the mask of the solid obstacles
-    mask(:,:,:) = mask_tmp(:,:,:,UxF)
+    mask(:,:,:) = mask_tmp(:,:,:,UxF)+mask_tmp(:,:,:,rhoF)
   endif
 
 end subroutine draw_skimmer

@@ -556,6 +556,100 @@ contains
     !===============================================================================
 
 
+    !===============================================================================
+    !> This function creates the sparse matrix stencil for open boundary CONDITIONS
+    !> It should be only called once in the beginning of the programm to construct
+    !> the matrix! Note: It is not optimized for calling it in every iteration!
+    !> Example Matrix structure for g=3 and Bs=4
+    !                /0   0    0     0     0     0     0     0     0  \
+    !                |0   0    0     0     0     0     0     0     0  |
+    !                |0   0    0     0     0     0     0     0     0  |
+    !                |0   0    0     -12   12    0     0     0     0  | 
+    !                |0   0    0    -6     0     6     0     0     0  |
+    ! Dxminus=   1/12|0   0    0     1    -8     0     8    -1     0  |
+    !                |0   0    0     0     1    -8     0     8    -1  |
+    !                |0   0    0     0     0     1    -8     0     8  |
+    !                \0   0    0     0     0     0     1    -8     0  /
+
+    subroutine  D_openFirstOrdminus(g,Bs,D_VAL,D_INDX,D_JNDX,D_SHAPE)
+
+      integer(kind=ik), intent(in)    :: g
+      integer(kind=ik), intent(in) :: Bs
+      real(kind=rk), allocatable, intent(out):: D_VAL(:)
+      integer, allocatable, intent(out)      :: D_INDX(:)
+      integer, allocatable, intent(out)      :: D_JNDX(:)
+      integer, intent(out)      :: D_SHAPE(2)
+
+      real(kind=rk), ALLOCATABLE:: val_tmp(:)
+      integer, ALLOCATABLE      :: indx_tmp(:)
+      integer, ALLOCATABLE      :: jndx_tmp(:)
+      integer :: nmax,k,i,j,N
+
+      N=Bs+2*g
+      ! Calculate the matrix size:
+      D_SHAPE=(/N, N/)
+
+      nmax= N*N
+      ! allocate the sparse matrix
+      allocate(val_tmp(nmax),indx_tmp(nmax),jndx_tmp(nmax))
+
+      indx_tmp=1
+      jndx_tmp=1
+      val_tmp=0
+
+      ! we now loop over all the rows and columns of this N times N Matrix
+      ! to set the desired values for the stencil
+      k=1
+      do i= g+3, N! skip the first two rows in the inner block grid
+                  ! this is necessary to adopt the stencil to a right sided stencil (see below)
+        do j= g+1, N
+
+            if ( j == i + 1 ) then
+              indx_tmp(k)=i
+              jndx_tmp(k)=i+1
+              val_tmp(k)=8.0_rk/12.0_rk
+              k=k+1
+            elseif ( j == i - 1 ) then
+              indx_tmp(k)=i
+              jndx_tmp(k)=i-1
+              val_tmp(k)=-8.0_rk/12.0_rk
+              k=k+1
+            elseif ( j == i + 2) then
+              indx_tmp(k)=i
+              jndx_tmp(k)=i + 2
+              val_tmp(k)=-1/12.0_rk
+              k=k+1
+            elseif ( j == i - 2 ) then
+              indx_tmp(k)=i
+              jndx_tmp(k)=i - 2
+              val_tmp(k)=1/12.0_rk
+              k=k+1
+            else
+              ! D_val(i)=0
+              ! matrix doesn`t save zeros in sparse representation
+            endif
+        end do
+      end do
+
+      ! initialice the first two rows of the matrix for the right sided stencil
+      val_tmp(k:k+4) = 1/12.0_rk * (/-12,  12,  &
+                      -6,  6 /)
+      indx_tmp(k:k+4)=(/g+1, g+1, g+2, g+2 /)
+      jndx_tmp(k:k+4)=(/g+1, g+2, g+1, g+3 /)
+      k=k+4
+
+      allocate(D_VAL(k),D_INDX(k),D_JNDX(k))
+
+      D_VAL=val_tmp(1:k)
+      D_INDX=indx_tmp(1:k)
+      D_JNDX=jndx_tmp(1:k)
+
+    end subroutine
+    !===============================================================================
+
+
+    
+
 
     !===============================================================================
     !> This function creates the sparse matrix stencil for open boundary CONDITIONS

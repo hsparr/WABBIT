@@ -113,7 +113,6 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
     call D_r( rho_u, tmp1)
     rhs(:,:,rhoF) =  rhs(:,:,rhoF) + tmp1 + rho_u*r_inv
     rhs(:,:,rhoF) = -rhs(:,:,rhoF) * 0.5_rk * sqrt_rho_inv
-
     ! ------------- momentum equation ---------------- !
     if (dissipation) then
          ! Compute mu
@@ -230,7 +229,7 @@ subroutine RHS_2D_cylinder( g, Bs, x0, dx, phi, rhs, boundary_flag)
               select case(params_ns%bound%name(2))
               case("symmetryAxis-wall")
                   ! slip wall condition: keep velocity
-                  rhs(:, g+1, UyF) = 0
+                  !rhs(:, g+1, UyF) = 0
                   rhs(:, g+1, pF)  = rhs(:, g+1, pF) + heat_flux_r(:, g+1)*(gamma_ - 1.0_rk)
                   phi(:, g+1, UyF) = 0
 

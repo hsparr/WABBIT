@@ -429,7 +429,7 @@ function draw_walls(x,r,skimmer,h)
   endif
   ! attach cappilary to wall in EAST
   if (  r > skimmer%jet_radius  ) then
-     mask=mask+hardstep(x+skimmer%wall_thickness_x-skimmer%plate(1)%x0(1)+skimmer%l_sk1_in-skimmer%plates_thickness+0.0005_rk)*hardstep(r-skimmer%r_out_cappilary*1.5_rk)
+     mask=mask+hardstep(x+skimmer%wall_thickness_x-skimmer%plate(1)%x0(1)+skimmer%l_sk1_in-skimmer%plates_thickness+skimmer%b)*hardstep(r-skimmer%r_out_cappilary*1.5_rk)
 
          !mask=mask+smoothstep(x,h)*smoothstep(r-skimmer%r_out_cappilary,h)
   endif
